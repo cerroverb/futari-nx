@@ -9,7 +9,7 @@ This is my fork of [ChanseyIsTheBest/futari-nx](https://github.com/ChanseyIsTheB
 Switch port of the Xbox 360 version of **Mushihimesama Futari Ver 1.5** (CAVE, 2009). It adds a native Linux build for
 AArch64 and x86-64, with the **Black Label** and **Ver 1.01** downloadable content.
 
-The Switch port already did the hard part. The game's PowerPC code (`default.xex` and its eight game cores in
+Chansey's project already handled the bulk of the work. The game's PowerPC code (`default.xex` and its eight game cores in
 `media/Module/*.xex`) is statically recompiled to C++ with [ReXGlue](https://github.com/rexglue/rexglue-sdk), and
 [reNut](https://github.com/masterspike52/reNut)'s Direct3D-level renderer draws the game's Direct3D calls directly.
 Because that port already runs on an ARM processor, its AArch64 code carries straight over to ARM Linux handhelds. On
