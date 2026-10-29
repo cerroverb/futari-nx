@@ -111,6 +111,8 @@ set(FUTARI_SOURCES
     src/futari_crash_log.cpp
     # Scripted pad for unattended test runs (cvar futari_input_script; tools/win/boot_test.ps1 -Pad).
     src/futari_input_script.cpp
+    # Exit from the idle title screen with B or Escape (ported from springah/futari_recomp).
+    src/futari_title_exit.cpp
     # Fixes for races the Xbox 360's timing never exposed (thread start race seen on the Switch).
     src/futari_fixes.cpp
     # Memory over time for crashes that leave no report (cvar futari_memory_log_s; Switch: heap incl. GPU memory).

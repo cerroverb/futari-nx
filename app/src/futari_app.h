@@ -5,6 +5,8 @@
 #include <cstdio>
 #include <cstdlib>
 #include <filesystem>
+#include <functional>
+#include <utility>
 #include <system_error>
 
 #include <rex/cvar.h>
@@ -12,11 +14,14 @@
 #include <rex/logging.h>
 #include <rex/rex_app.h>
 #include <rex/runtime.h>
+#include <rex/input/input_system.h>
+#include <rex/ui/window.h>
 
 #include "futari_capture.h"
 #include "futari_dlc.h"
 #include "futari_enhancements.h"
 #include "futari_input_script.h"
+#include "futari_title_exit.h"
 #include "futari_memory_log.h"
 #include "futari_pgo.h"
 #include "futari_pc_profiler.h"
@@ -137,6 +142,23 @@ class FutariApp : public rex::ReXApp {
       config.graphics = me::native::CreateGraphicsSystem();
       REXLOG_INFO("graphics: native Vulkan renderer (PM4 ring)");
     }
+  }
+
+  // futari-linux (2026-10-29): exit from the idle title with B or Escape, ported from springah/futari_recomp
+  // (futari_title_exit.h).
+  void OnCreateDialogs(rex::ui::ImGuiDrawer* drawer) override {
+    (void)drawer;
+    futari::title_exit::Install({
+        [this]() -> rex::input::InputSystem* {
+          auto* rt = runtime();
+          return rt ? static_cast<rex::input::InputSystem*>(rt->input_system()) : nullptr;
+        },
+        [this] { return imgui_drawer(); },
+        [this](std::function<void()> function) { app_context().CallInUIThread(std::move(function)); },
+        [this] {
+          if (rex::ui::Window* w = window()) w->RequestClose();
+        },
+    });
   }
 
   void OnPostSetup() override {

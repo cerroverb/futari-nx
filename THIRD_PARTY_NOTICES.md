@@ -101,6 +101,9 @@ affiliated with or endorsed by any of them.
 - **reNut** (github.com/masterspike52/reNut, by reNut and masterspike52): the Direct3D-level renderer in
   `app/src/renut_engine/gpu`, through banjo-nx's adaptation. reNut has no licence file; its author permits the user's
   ports to reuse it.
+- **futari_recomp** (github.com/springah/futari_recomp, 36902dd, by springah; the feature by itemzer0): BSD 3-Clause.
+  The exit from the idle title screen with B or Escape (`app/src/futari_title_exit.cpp`) is ported from its
+  `src/main.cpp`.
 - **UnleashedRecomp** (github.com/hedge-dev/UnleashedRecomp, cf829a9): GPL-3.0, as this project. Its wait for the previous image before a
   frame (`futari_vblank_wait_shown`, `app/src/renut_engine/futari_renut_vblank.cpp`) and its app id and window icon
   through SDL (`native_window.cpp`, `futari_app.h`, the SDK's `window_sdl.cpp`) are ported from it.
