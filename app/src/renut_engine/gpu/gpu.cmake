@@ -34,6 +34,20 @@ if(NOT EXISTS "${RENUT_SHADER_DUMP_DIR}")
 endif()
 
 # plume is read-only and vendored; build it as-is.
+# On Linux its Vulkan surface goes through SDL (PLUME_SDL_VULKAN_ENABLED), so
+# Wayland works as well as X11: plume takes its <SDL_vulkan.h> from the
+# SDL2::SDL2 target, which here is reNut's SDL2-to-SDL3 bridge
+# (backend/sdl2_vulkan) over the SDK's SDL3 headers; the surface itself is
+# made in backend/native_window.cpp.
+# futari-linux (2026-10-28): from reNut (github.com/masterspike52/reNut 688ff73, gpu/gpu.cmake), with the Switch left out.
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux" AND NOT REXGLUE_PLATFORM_SWITCH AND NOT TARGET plume)
+    set(PLUME_SDL_VULKAN_ENABLED ON CACHE BOOL "plume's Vulkan surface through SDL (Wayland and X11)" FORCE)
+    if(NOT TARGET SDL2::SDL2)
+        add_library(SDL2::SDL2 INTERFACE IMPORTED)
+        set_target_properties(SDL2::SDL2 PROPERTIES INTERFACE_INCLUDE_DIRECTORIES
+            "${RENUT_GPU_DIR}/backend/sdl2_vulkan;$<TARGET_PROPERTY:SDL3::SDL3-static,INTERFACE_INCLUDE_DIRECTORIES>")
+    endif()
+endif()
 if(NOT TARGET plume)
     add_subdirectory("${CMAKE_SOURCE_DIR}/thirdparty/plume" "${CMAKE_BINARY_DIR}/plume")
 endif()
@@ -363,9 +377,8 @@ function(renut_gpu_setup TARGET)
 
     if(WIN32)
         target_link_libraries(${TARGET} PRIVATE d3d12 dxgi)
-    elseif(NOT APPLE AND NOT REXGLUE_PLATFORM_SWITCH)
-        # plume's Linux Vulkan surface is Xlib; volk loads libvulkan itself.
-        find_package(X11 REQUIRED)
-        target_link_libraries(${TARGET} PRIVATE X11::X11)
     endif()
+    # Linux: volk loads libvulkan itself, and the Wayland or X11 surface is made
+    # from SDL's handles (backend/native_window.cpp): no X11 or Wayland library.
+    # futari-linux (2026-10-28): from reNut (github.com/masterspike52/reNut 688ff73), in place of X11::X11.
 endfunction()

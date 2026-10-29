@@ -251,6 +251,21 @@ if(NOT REXGLUE_PLATFORM_SWITCH)
         VERBATIM)
 endif()
 
+# futari-linux (2026-10-29): the window and taskbar icon (src/futari_app.h), app/futari_icon.png (the Switch build's
+# futari_icon.jpg as PNG, which SDL loads itself), compiled in as bytes. The header is rewritten only when it changes.
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+    file(READ "${CMAKE_CURRENT_SOURCE_DIR}/futari_icon.png" _futari_icon_hex HEX)
+    string(REGEX REPLACE "([0-9a-f][0-9a-f])" "0x\\1," _futari_icon_bytes "${_futari_icon_hex}")
+    file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/futari_icon/futari_icon_png.h.tmp"
+         "// Generated from app/futari_icon.png by app/CMakeLists.txt.\n#pragma once\n#include <cstdint>\n"
+         "inline constexpr uint8_t kFutariIconPng[] = {${_futari_icon_bytes}};\n")
+    configure_file("${CMAKE_CURRENT_BINARY_DIR}/futari_icon/futari_icon_png.h.tmp"
+                   "${CMAKE_CURRENT_BINARY_DIR}/futari_icon/futari_icon_png.h" COPYONLY)
+    target_include_directories(futari PRIVATE "${CMAKE_CURRENT_BINARY_DIR}/futari_icon")
+    target_compile_definitions(futari PRIVATE FUTARI_WINDOW_ICON=1)
+    set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/futari_icon.png")
+endif()
+
 # The SDK compiles itself with these (directory scope), but they do not reach the generated game code, which is
 # built in this directory. GCC's default for GNU C++ is -ffp-contract=fast: it fuses separate PPC fmul/fadd into
 # FMA and results drift from the Xbox 360. Strict aliasing is unsafe for recompiled code (guest memory and the

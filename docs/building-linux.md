@@ -131,9 +131,12 @@ native chain's shaders. Both files are made from the game and are never distribu
 Every enhancement it does not mention is on, as on the Switch (`app/src/futari_enhancements.cpp`). The Switch-only
 ones (deko3d, NVK, core pinning, clocks) do nothing here.
 
-plume makes its Vulkan surface with `VK_KHR_xlib_surface`, so the game sets `SDL_VIDEO_DRIVER=x11` for itself
-(`app/src/renut_engine/gpu/backend/native_window.cpp`). On a Wayland session it runs through XWayland, and under
-gamescope through gamescope's XWayland.
+The Vulkan surface is made on whichever video driver SDL chose: `VK_KHR_wayland_surface` on a native Wayland window,
+`VK_KHR_xlib_surface` on X11 or XWayland (plume's `PLUME_SDL_VULKAN_ENABLED` path; the surface in
+`app/src/renut_engine/gpu/backend/native_window.cpp`, ported from reNut). SDL 3.5 takes Wayland when the compositor
+offers `wp_fifo_manager_v1` (KWin 6.7 does) and X11 otherwise; gamescope gives the game no Wayland socket, so there it
+runs through gamescope's XWayland as before. `SDL_VIDEO_DRIVER=x11` or `wayland` (or the `video_driver` setting)
+forces one. The log says "Vulkan surface on Wayland" or "on X11".
 
 ## Input latency
 
@@ -151,8 +154,12 @@ Switch-only given a Linux form:
   desktop compositor (KWin, through XWayland) present wait reports when the compositor took each image instead of a
   refresh, and the grid would follow the game's own presents: the vblanks of every 2 s are counted, and a rate more than
   3 % away from the display's gives the vblank back to the timer (the log says so). Under gamescope (Steam's Game Mode)
-  the lock holds. The
-  "[latency]" line every 10 s gives the phase and the images that were shown a refresh late.
+  and on native Wayland (KWin 6.7, NVIDIA 615, 240 Hz) the lock holds. The
+  "[latency]" line every 10 s gives the phase, the images that were shown a refresh late and the vblanks that waited for the previous image.
+- `futari_vblank_wait_shown` (on): on a display of one refresh a game frame (60 Hz), an image left queued behind
+  another after a stall stayed queued for good, a frame more input lag (main's late count rose 600 per 10 s for a whole
+  run). The guest vblank now waits, at most a frame, until the newest image is on screen, as UnleashedRecomp starts a
+  frame only once the previous image is shown; after a stall one vblank comes a refresh later and the queue is empty.
 - `input_sdl_sync_poll` (new, on): the SDK's SDL input driver answered the game's controller read from the events of
   the previous UI-thread pump, so the state it returned was as old as the game's previous read. Each read now updates
   the gamepads on the reading thread first (`SDL_UpdateGamepads`, which SDL allows from any thread); reads closer
@@ -162,6 +169,10 @@ Switch-only given a Linux form:
 Run it fullscreen. Under gamescope the game is presented through gamescope's XWayland. `renut_vsync = false`
 presents without waiting for the refresh (Vulkan immediate mode): an image reaches the screen as soon as it is done,
 with tearing.
+
+On a screen that is not 16:9 the whole picture is shown with black bars (letterbox or pillarbox), never stretched;
+`futari_fill_crop = true` fills the screen instead and trims up to 15 % of the picture's edges. The log line
+"Output WxH: the game's ... image shown at ..." says where the picture goes.
 
 ## Build options
 

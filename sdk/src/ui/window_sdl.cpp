@@ -158,6 +158,7 @@ bool WindowSDL::OpenImpl() {
   }
   sdl_window_id_ = SDL_GetWindowID(sdl_window_);
   sdl_app_context().RegisterWindow(sdl_window_id_, this);
+  ApplyIconNow();  // futari-linux: an icon set before the window existed
 
   // Center on the requested display before fullscreen so SDL resolves
   // fullscreen against it. 1-based enumeration order; 0 = system default.
@@ -319,6 +320,33 @@ void WindowSDL::ApplyNewTitle() {
     return;
   }
   SDL_SetWindowTitle(sdl_window_, GetTitle().c_str());
+}
+
+// futari-linux (2026-10-29): see window_sdl.h.
+void WindowSDL::LoadAndApplyIcon(const void* buffer, size_t size, bool can_apply_state_in_current_phase) {
+  const auto* bytes = static_cast<const uint8_t*>(buffer);
+  icon_.assign(bytes, bytes + (buffer ? size : 0));
+  if (can_apply_state_in_current_phase) {
+    ApplyIconNow();
+  }
+}
+
+void WindowSDL::ApplyIconNow() {
+  if (!sdl_window_ || icon_.empty()) {
+    return;
+  }
+  static constexpr uint8_t kPngSignature[8] = {0x89, 'P', 'N', 'G', '\r', '\n', 0x1A, '\n'};
+  SDL_IOStream* io = SDL_IOFromConstMem(icon_.data(), icon_.size());
+  const bool png = icon_.size() >= 8 && std::memcmp(icon_.data(), kPngSignature, 8) == 0;
+  SDL_Surface* surface = png ? SDL_LoadPNG_IO(io, true) : SDL_LoadBMP_IO(io, true);
+  if (!surface) {
+    REXLOG_WARN("Window icon: {}", SDL_GetError());
+    return;
+  }
+  if (!SDL_SetWindowIcon(sdl_window_, surface)) {
+    REXLOG_WARN("SDL_SetWindowIcon failed: {}", SDL_GetError());
+  }
+  SDL_DestroySurface(surface);
 }
 
 void WindowSDL::ApplyNewMouseCapture() {

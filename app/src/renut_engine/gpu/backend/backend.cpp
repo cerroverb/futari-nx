@@ -44,7 +44,11 @@ REXCVAR_DEFINE_BOOL(renut_vulkan_debug_layers, false, "Nuts&Bolts/Graphics",
     .lifecycle(rex::cvar::Lifecycle::kRequiresRestart);
 
 namespace plume {
+#if defined(PLUME_SDL_VULKAN_ENABLED)
+std::unique_ptr<RenderInterface> CreateVulkanInterface(RenderWindow sdlWindow);
+#else
 std::unique_ptr<RenderInterface> CreateVulkanInterface();
+#endif
 #if defined(_WIN32)
 std::unique_ptr<RenderInterface> CreateD3D12Interface();
 #endif
@@ -278,7 +282,7 @@ plume::RenderShaderFormat HostShaderFormat() {
   return IsVulkan() ? plume::RenderShaderFormat::SPIRV : plume::RenderShaderFormat::DXIL;
 }
 
-std::unique_ptr<plume::RenderInterface> CreateRenderInterface() {
+std::unique_ptr<plume::RenderInterface> CreateRenderInterface([[maybe_unused]] plume::RenderWindow window) {
 #if defined(PLUME_DEKO3D)
   if (IsDeko3D()) {
     // banjo-nx: the DKSH cache (variants compiled before, on the PC or by this console) before the device exists.
@@ -295,7 +299,11 @@ std::unique_ptr<plume::RenderInterface> CreateRenderInterface() {
 #endif
   if (REXCVAR_GET(renut_vulkan_debug_layers))
     EnableVulkanDebugLayers();
+#if defined(PLUME_SDL_VULKAN_ENABLED)
+  auto render_interface = plume::CreateVulkanInterface(window);
+#else
   auto render_interface = plume::CreateVulkanInterface();
+#endif
   if (render_interface)
     RouteVulkanPipelineCreation();
   return render_interface;

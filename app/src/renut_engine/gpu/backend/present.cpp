@@ -67,6 +67,13 @@ REXCVAR_DEFINE_BOOL(renut_vsync, true, "Nuts&Bolts/Graphics",
                     "the refresh rate (frame_cap then only limits below it). Off shows frames at "
                     "once, with tearing.");
 
+// futari-linux (2026-10-28): the trim of FitFrame made optional, letterbox bars by default (a 16:9 frame on a 16:10
+// panel lost about 5 % of each side).
+REXCVAR_DEFINE_BOOL(futari_fill_crop, false, "Nuts&Bolts/Graphics",
+                    "On a window that is not the frame's shape: on, the frame fills it and up to 15 % of the frame is "
+                    "trimmed from its edges (bars only past that); off, the whole frame with letterbox bars. Never "
+                    "stretched.");
+
 namespace renut::gpu {
 
 namespace {
@@ -115,12 +122,38 @@ struct FrameFit {
 // The frame fills the output (a window that is not the frame's shape, say a
 // maximized one) without bars: it covers it, keeping its proportions, and the
 // part that overflows is trimmed evenly from both edges. Past kMaxTrim, the
-// rest is fitted with bars.
+// rest is fitted with bars. futari-linux: only with futari_fill_crop; without
+// it the whole frame is fitted with bars.
 FrameFit FitFrame(uint32_t out_w, uint32_t out_h, uint32_t src_w, uint32_t src_h) {
   FrameFit fit;
   fit.viewport = plume::RenderViewport(0.0f, 0.0f, float(out_w), float(out_h));
   if (src_w == 0 || src_h == 0 || out_w == 0 || out_h == 0)
     return fit;
+  if (!REXCVAR_GET(futari_fill_crop)) {
+    // futari-linux (2026-10-28): the default, ported from the SDK's presenter (sdk/src/ui/presenter.cpp
+    // GetPaintFlowForGuestOutput, lines 1019-1112) with its defaults, overscan cutoff off (safe area 100) and
+    // present_letterbox on: the whole frame keeps its proportions, centred, with black bars (letterbox or pillarbox),
+    // in whole pixels. Its present_letterbox-off stretch is left out (never stretched here).
+    auto rescale_unsigned = [](uint32_t value, uint32_t new_scale, uint32_t old_scale) -> uint32_t {
+      return uint32_t((uint64_t(value) * new_scale + (old_scale >> 1)) / old_scale);
+    };
+    uint32_t w, h, x, y;
+    if (uint64_t(out_w) * src_h > uint64_t(out_h) * src_w) {
+      // The window is wider than the source: the full height, bars at the sides.
+      h = out_h;
+      w = rescale_unsigned(out_h, src_w, src_h);
+      x = (out_w - w) / 2;
+      y = 0;
+    } else {
+      // The window is taller than the source: the full width, bars at the top and bottom.
+      w = out_w;
+      h = rescale_unsigned(out_w, src_h, src_w);
+      x = 0;
+      y = (out_h - h) / 2;
+    }
+    fit.viewport = plume::RenderViewport(float(x), float(y), float(w), float(h));
+    return fit;
+  }
   const float out_aspect = float(out_w) / float(out_h);
   float src_aspect = float(src_w) / float(src_h);
   if (src_aspect > out_aspect) {
@@ -137,6 +170,19 @@ FrameFit FitFrame(uint32_t out_w, uint32_t out_h, uint32_t src_w, uint32_t src_h
     w = h * src_aspect;
   fit.viewport = plume::RenderViewport((float(out_w) - w) * 0.5f, (float(out_h) - h) * 0.5f, w, h);
   return fit;
+}
+
+// futari-linux (2026-10-28): the output size and where the frame goes, logged whenever either changes (the same line
+// espgaluda2-recomp logs).
+void LogFrameFit(uint32_t out_w, uint32_t out_h, uint32_t src_w, uint32_t src_h, const FrameFit &fit) {
+  static uint32_t last[4] = {};
+  const uint32_t now[4] = {out_w, out_h, src_w, src_h};
+  if (std::equal(std::begin(now), std::end(now), std::begin(last)))
+    return;
+  std::copy(std::begin(now), std::end(now), std::begin(last));
+  RGPU_INFO("Output {}x{}: the game's {}x{} image shown at {}x{} from ({}, {}) (futari_fill_crop {})", out_w, out_h,
+            src_w, src_h, uint32_t(fit.viewport.width), uint32_t(fit.viewport.height), uint32_t(fit.viewport.x),
+            uint32_t(fit.viewport.y), REXCVAR_GET(futari_fill_crop) ? "on" : "off");
 }
 
 // banjo-nx (2026-10-20, banjo_renut_game_gamma): the gamma ramp the game loads, which the 360's display applies to
@@ -228,6 +274,7 @@ void RecordScanOut(VideoState &s, const PresentImage &image, uint32_t out_w, uin
   const uint32_t src_w = image.source_width ? image.source_width : image.width;
   const uint32_t src_h = image.source_height ? image.source_height : image.height;
   const FrameFit fit = FitFrame(out_w, out_h, src_w, src_h);
+  LogFrameFit(out_w, out_h, src_w, src_h, fit);
   const plume::RenderViewport &vp = fit.viewport;
   cmd->setViewports(vp);
   cmd->setScissors(plume::RenderRect(int32_t(vp.x), int32_t(vp.y), int32_t(vp.x + vp.width),

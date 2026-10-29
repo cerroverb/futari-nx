@@ -111,8 +111,10 @@ The details and the related settings are in the "Input latency" section of
 
 </div>
 
-The game makes its Vulkan surface through X11, so on Wayland it runs through XWayland and under gamescope through
-gamescope's XWayland. On handhelds whose built-in pad is managed by InputPlumber or Steam Input, launch it from Steam
+On a Wayland desktop (KDE Plasma 6.7 and others with the fifo-v1 protocol) the game runs as a native Wayland window;
+elsewhere through X11, and under gamescope through gamescope's XWayland. `SDL_VIDEO_DRIVER=x11` forces X11. On a
+screen that is not 16:9 the picture keeps its shape with black bars (`futari_fill_crop = true` fills the screen and
+trims the edges instead). On handhelds whose built-in pad is managed by InputPlumber or Steam Input, launch it from Steam
 Game Mode so the controller shows up.
 
 ## What changed from upstream

@@ -38,8 +38,11 @@ const char *BackendName(Backend backend);
 
 plume::RenderShaderFormat HostShaderFormat();
 
-// Creates the plume interface for the active backend, or nullptr.
-std::unique_ptr<plume::RenderInterface> CreateRenderInterface();
+// Creates the plume interface for the active backend, or nullptr. 'window' is
+// the game window (GetNativeRenderWindow): on Linux plume's Vulkan interface
+// asks it for the surface's instance extensions.
+// futari-linux (2026-10-28): the window argument is reNut's (github.com/masterspike52/reNut 688ff73).
+std::unique_ptr<plume::RenderInterface> CreateRenderInterface(plume::RenderWindow window);
 
 // Buffer flags for how the renderer uses a buffer, per backend. plume's
 // Vulkan buffers take their usage from particular flags: a device address

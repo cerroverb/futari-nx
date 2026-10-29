@@ -33,6 +33,10 @@
 #if defined(FUTARI_BUILTIN_CONFIG)
 #include "futari_builtin_config.h"  // generated from app/futari_switch_defaults.toml and futari_switch.toml (CMake)
 #endif
+#if defined(FUTARI_WINDOW_ICON)
+#include <rex/ui/window.h>
+#include "futari_icon_png.h"  // generated from app/futari_icon.png (CMake)
+#endif
 
 class FutariApp : public rex::ReXApp {
  public:
@@ -136,6 +140,19 @@ class FutariApp : public rex::ReXApp {
   }
 
   void OnPostSetup() override {
+#if defined(FUTARI_WINDOW_ICON)
+    // futari-linux (2026-10-29): the window's name and icon, as UnleashedRecomp sets its own (ui/game_window.cpp
+    // SetTitle, SetIcon): "futari-linux-<architecture>", the same name as the app id the taskbar groups by
+    // (SDL_APP_ID, renut_engine/gpu/backend/native_window.cpp), and the game's icon.
+    if (rex::ui::Window* w = window()) {
+#if defined(__aarch64__)
+      w->SetTitle("futari-linux-aarch64");
+#else
+      w->SetTitle("futari-linux-x86_64");
+#endif
+      w->SetIcon(kFutariIconPng, sizeof(kFutariIconPng));
+    }
+#endif
     // DLC (Black Label, Ver 1.01) from dlc/ next to the executable goes into the content store before the game's
     // DLCControl looks for it.
     futari::dlc::InstallPackages(runtime());

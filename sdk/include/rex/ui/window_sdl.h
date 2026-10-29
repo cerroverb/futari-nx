@@ -17,6 +17,7 @@
 #include <cstdint>
 #include <memory>
 #include <string_view>
+#include <vector>
 
 #include <SDL3/SDL.h>
 
@@ -56,6 +57,10 @@ class WindowSDL final : public Window {
   void ApplyNewCursorVisibility(CursorVisibility old_cursor_visibility) override;
   void ApplyNewTextInputActive() override;
   void FocusImpl() override;
+  // futari-linux (2026-10-29): the window icon through SDL_SetWindowIcon, as UnleashedRecomp sets its icon
+  // (github.com/hedge-dev/UnleashedRecomp cf829a9, UnleashedRecomp/ui/game_window.cpp GameWindow::SetIcon). Here the
+  // buffer is a PNG or BMP image (SDL_LoadPNG_IO / SDL_LoadBMP_IO), not the Windows .ico the base class describes.
+  void LoadAndApplyIcon(const void* buffer, size_t size, bool can_apply_state_in_current_phase) override;
 
   std::unique_ptr<Surface> CreateSurfaceImpl(Surface::TypeFlags allowed_types) override;
   void RequestPaintImpl() override;
@@ -73,6 +78,7 @@ class WindowSDL final : public Window {
 
   void ApplyCursorVisibilityNow();
   void ApplyTextInputActiveNow();
+  void ApplyIconNow();  // futari-linux: icon_ onto the SDL window (nothing for an empty icon)
   void RearmCursorAutoHideTimer();
 
   // Ratio between SDL window coordinates and the physical pixels listeners
@@ -81,6 +87,7 @@ class WindowSDL final : public Window {
 
   SDL_Window* sdl_window_ = nullptr;
   SDL_WindowID sdl_window_id_ = 0;
+  std::vector<uint8_t> icon_;  // futari-linux: the last LoadAndApplyIcon image, applied when the window exists
   std::atomic<bool> paint_pending_{false};
   // Auto-hide cursor bookkeeping (CursorVisibility::kAutoHidden).
   SDL_TimerID cursor_hide_timer_ = 0;

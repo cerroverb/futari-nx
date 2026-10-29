@@ -432,6 +432,11 @@ bool BuildSwapChainTargets(VideoState &s) {
     s.swap_framebuffers.push_back(std::move(framebuffer));
     s.present_semaphores.push_back(s.device->createCommandSemaphore());
   }
+  // futari-linux (2026-10-28): the output size, to compare Wayland (scaled by SDL) with X11.
+  uint32_t window_w = 0, window_h = 0;
+  GetRenderWindowPixelSize(window_w, window_h);
+  RGPU_INFO("Swapchain: {}x{} ({} images), window {}x{} pixels", s.swap_chain->getWidth(),
+            s.swap_chain->getHeight(), count, window_w, window_h);
   return count != 0;
 }
 
@@ -890,7 +895,7 @@ bool Video::CreateHostDevice() {
 #endif
 
   banjo::renut_gpu::BeforeDeviceCreated();  // banjo-nx: plume's pipeline cache and barriers (banjo_renut_tuning.h)
-  s.render_interface = CreateRenderInterface();
+  s.render_interface = CreateRenderInterface(render_window);
   if (!s.render_interface) {
     RGPU_ERROR("{} render interface creation failed", BackendName(ActiveBackend()));
     return false;

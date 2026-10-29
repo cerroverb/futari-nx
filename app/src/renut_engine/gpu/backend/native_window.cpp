@@ -11,9 +11,11 @@
 #include <switch.h>
 #else
 #include <cstdlib>
+#include <cstring>
 
 #include <SDL3/SDL_properties.h>
 #include <SDL3/SDL_video.h>
+#include <plume_vulkan.h>
 #endif
 
 namespace renut::gpu {
@@ -94,11 +96,16 @@ bool GetRenderWindowPixelSize(uint32_t &width, uint32_t &height) {
 
 namespace {
 
-// Runs before main, so before the SDK initialises SDL. plume builds its Vulkan
-// surface with VK_KHR_xlib_surface, which needs the X11 video driver (XWayland
-// on Wayland sessions). An explicit user setting is left alone.
-[[maybe_unused]] const bool kPreferX11 = [] {
-  setenv("SDL_VIDEO_DRIVER", "x11", 0);
+// futari-linux (2026-10-29): runs before main, so before the SDK initialises SDL. The app id is what the taskbar
+// groups the window by and names it after (the Wayland app_id, the X11 WM_CLASS), as UnleashedRecomp sets its own
+// before creating its window (ui/game_window.cpp, SDL_SetHint("SDL_APP_ID", ...)); SDL reads hints from the
+// environment as well. An explicit user setting is left alone.
+[[maybe_unused]] const bool kAppId = [] {
+#if defined(__aarch64__)
+  setenv("SDL_APP_ID", "futari-linux-aarch64", 0);
+#else
+  setenv("SDL_APP_ID", "futari-linux-x86_64", 0);
+#endif
   return true;
 }();
 
@@ -113,22 +120,14 @@ SDL_Window *FindGameSdlWindow() {
 
 } // namespace
 
+// futari-linux (2026-10-28): the window and the surface below are reNut's
+// (github.com/masterspike52/reNut 688ff73, gpu/backend/native_window.cpp), so
+// the game runs on Wayland without XWayland. Before, SDL was pinned to X11 and
+// plume made an Xlib surface.
 bool GetNativeRenderWindow(plume::RenderWindow &out) {
-  SDL_Window *sdl_window = FindGameSdlWindow();
-  if (!sdl_window) {
+  out = FindGameSdlWindow();
+  if (!out) {
     RGPU_ERROR("No SDL window for the Vulkan surface");
-    return false;
-  }
-
-  const SDL_PropertiesID props = SDL_GetWindowProperties(sdl_window);
-  out.display = static_cast<Display *>(
-      SDL_GetPointerProperty(props, SDL_PROP_WINDOW_X11_DISPLAY_POINTER, nullptr));
-  out.window = static_cast<Window>(
-      SDL_GetNumberProperty(props, SDL_PROP_WINDOW_X11_WINDOW_NUMBER, 0));
-  if (!out.display || !out.window) {
-    RGPU_ERROR("SDL window has no X11 handles (video driver '{}'); the Vulkan "
-               "surface needs SDL_VIDEO_DRIVER=x11",
-               SDL_GetCurrentVideoDriver() ? SDL_GetCurrentVideoDriver() : "none");
     return false;
   }
   return true;
@@ -147,3 +146,106 @@ bool GetRenderWindowPixelSize(uint32_t &width, uint32_t &height) {
 #endif
 
 } // namespace renut::gpu
+
+#if !defined(_WIN32) && !defined(__SWITCH__)
+
+// plume's Vulkan surface (its PLUME_SDL_VULKAN_ENABLED path, through
+// gpu/backend/sdl2_vulkan/SDL_vulkan.h), on whichever video driver SDL chose:
+// Wayland (VK_KHR_wayland_surface on the window's wl_display and wl_surface)
+// or X11, XWayland included (VK_KHR_xlib_surface on its Display and Window).
+// SDL_VIDEO_DRIVER=x11 or wayland picks one. Made here from the handles SDL
+// gives every window: SDL's own surface needs SDL_WINDOW_VULKAN, which the
+// SDK's window lacks.
+// futari-linux (2026-10-28): from reNut (github.com/masterspike52/reNut
+// 688ff73, gpu/backend/native_window.cpp), unchanged but for this comment.
+
+namespace {
+
+bool WaylandWindow() {
+  const char *driver = SDL_GetCurrentVideoDriver();
+  return driver && std::strcmp(driver, "wayland") == 0;
+}
+
+// VkWaylandSurfaceCreateInfoKHR and VkXlibSurfaceCreateInfoKHR, without the
+// Wayland and Xlib headers: their handles come from SDL as pointers and an XID.
+struct WaylandSurfaceCreateInfo {
+  VkStructureType sType;
+  const void *pNext;
+  VkFlags flags;
+  void *display;  // wl_display *
+  void *surface;  // wl_surface *
+};
+struct XlibSurfaceCreateInfo {
+  VkStructureType sType;
+  const void *pNext;
+  VkFlags flags;
+  void *dpy;             // Display *
+  unsigned long window;  // Window
+};
+using CreateSurfaceFunction = VkResult(VKAPI_PTR *)(VkInstance, const void *,
+                                                    const VkAllocationCallbacks *, VkSurfaceKHR *);
+
+constexpr const char *kWaylandExtensions[] = {"VK_KHR_surface", "VK_KHR_wayland_surface"};
+constexpr const char *kXlibExtensions[] = {"VK_KHR_surface", "VK_KHR_xlib_surface"};
+
+} // namespace
+
+bool renut_SDL2_Vulkan_GetInstanceExtensions(SDL_Window *, unsigned int *count, const char **names) {
+  if (!count)
+    return false;
+  const char *const *extensions = WaylandWindow() ? kWaylandExtensions : kXlibExtensions;
+  constexpr unsigned int kCount = 2;
+  if (names) {
+    for (unsigned int i = 0; i < kCount && i < *count; ++i)
+      names[i] = extensions[i];
+  }
+  *count = kCount;
+  return true;
+}
+
+bool renut_SDL2_Vulkan_CreateSurface(SDL_Window *window, VkInstance instance, VkSurfaceKHR *surface) {
+  if (!window || !instance || !surface)
+    return false;
+  const SDL_PropertiesID props = SDL_GetWindowProperties(window);
+  VkResult result = VK_ERROR_INITIALIZATION_FAILED;
+  if (WaylandWindow()) {
+    WaylandSurfaceCreateInfo info{};
+    info.sType = VK_STRUCTURE_TYPE_WAYLAND_SURFACE_CREATE_INFO_KHR;
+    info.display = SDL_GetPointerProperty(props, SDL_PROP_WINDOW_WAYLAND_DISPLAY_POINTER, nullptr);
+    info.surface = SDL_GetPointerProperty(props, SDL_PROP_WINDOW_WAYLAND_SURFACE_POINTER, nullptr);
+    auto create = reinterpret_cast<CreateSurfaceFunction>(
+        vkGetInstanceProcAddr(instance, "vkCreateWaylandSurfaceKHR"));
+    if (!info.display || !info.surface || !create) {
+      RGPU_ERROR("No Wayland surface for the window (display {}, surface {}, "
+                 "vkCreateWaylandSurfaceKHR {})",
+                 info.display != nullptr, info.surface != nullptr, create != nullptr);
+      return false;
+    }
+    result = create(instance, &info, nullptr, surface);
+    if (result == VK_SUCCESS)
+      RGPU_INFO("Vulkan surface on Wayland");
+  } else {
+    XlibSurfaceCreateInfo info{};
+    info.sType = VK_STRUCTURE_TYPE_XLIB_SURFACE_CREATE_INFO_KHR;
+    info.dpy = SDL_GetPointerProperty(props, SDL_PROP_WINDOW_X11_DISPLAY_POINTER, nullptr);
+    info.window = static_cast<unsigned long>(
+        SDL_GetNumberProperty(props, SDL_PROP_WINDOW_X11_WINDOW_NUMBER, 0));
+    auto create = reinterpret_cast<CreateSurfaceFunction>(
+        vkGetInstanceProcAddr(instance, "vkCreateXlibSurfaceKHR"));
+    if (!info.dpy || !info.window || !create) {
+      RGPU_ERROR("No X11 surface for the window (video driver '{}')",
+                 SDL_GetCurrentVideoDriver() ? SDL_GetCurrentVideoDriver() : "none");
+      return false;
+    }
+    result = create(instance, &info, nullptr, surface);
+    if (result == VK_SUCCESS)
+      RGPU_INFO("Vulkan surface on X11");
+  }
+  if (result != VK_SUCCESS) {
+    RGPU_ERROR("Vulkan surface creation failed ({})", int(result));
+    return false;
+  }
+  return true;
+}
+
+#endif
