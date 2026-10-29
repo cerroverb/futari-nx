@@ -14,6 +14,13 @@
 cmake_minimum_required(VERSION 3.25)
 project(futari LANGUAGES CXX)
 
+# futari-linux (2026-10-29): source paths compiled into the binaries (__FILE__, debug info) relative to the
+# repository, so a release does not carry the build machine's folders (GCC/Clang -ffile-prefix-map; out/ is inside).
+if(NOT MSVC)
+  get_filename_component(FUTARI_REPO_ROOT "${CMAKE_SOURCE_DIR}/.." ABSOLUTE)
+  add_compile_options("-ffile-prefix-map=${FUTARI_REPO_ROOT}/=")
+endif()
+
 # Linux AArch64 (2026-10-26): the PC build's layout (the SDK's SDL3 + Vulkan platform layer, the game cores as shared
 # libraries next to the executable, Renut on plume's Vulkan back end) with the Switch build's AArch64 code. The NEON
 # forms of the generated code (rex/ppc/intrinsics.h, tools/vec_byteswap.py, tools/guest_cas.py,
