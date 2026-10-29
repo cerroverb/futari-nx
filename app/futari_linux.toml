@@ -14,5 +14,8 @@ fullscreen = true
 # A screen that is not 16:9 (16:10, 4:3): letterbox bars by default. true fills it, trimming up to 15 % of the
 # picture's edges. Never stretched.
 futari_fill_crop = false
+# Vsync: false (default) shows each picture at once, the least input lag, tearing possible; true waits for the
+# screen's refresh.
+renut_vsync = false
 
 log_level = "warn"

@@ -62,7 +62,9 @@ REXCVAR_DEFINE_BOOL(banjo_renut_game_gamma, true, "Banjo/Renut",  // futari-nx: 
                     "Apply the gamma ramp the game loads to the output, as the Xbox 360's display and banjo-nx's own "
                     "renderer do (N&B's darkens the midtones, about x^1.17). Off: Renut's output as before");
 
-REXCVAR_DEFINE_BOOL(renut_vsync, true, "Nuts&Bolts/Graphics",
+// futari-linux (2026-10-29): off by default, the lowest-latency mode (Vulkan immediate present, no
+// queue at the display; tearing possible). true = FIFO vsync.
+REXCVAR_DEFINE_BOOL(renut_vsync, false, "Nuts&Bolts/Graphics",
                     "Show each frame at the display's refresh: no tearing, and the game runs at "
                     "the refresh rate (frame_cap then only limits below it). Off shows frames at "
                     "once, with tearing.");

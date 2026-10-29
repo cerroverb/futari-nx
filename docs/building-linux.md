@@ -166,9 +166,9 @@ Switch-only given a Linux form:
   together than `input_sdl_sync_poll_us` (500) share one update.
 - `futari_renut_double_buffer` (on): a 2-image swapchain, as on the Switch.
 
-Run it fullscreen. Under gamescope the game is presented through gamescope's XWayland. `renut_vsync = false`
-presents without waiting for the refresh (Vulkan immediate mode): an image reaches the screen as soon as it is done,
-with tearing.
+Run it fullscreen. Under gamescope the game is presented through gamescope's XWayland. `renut_vsync = false`, the
+default since 2026-10-29, presents without waiting for the refresh (Vulkan immediate mode): an image reaches the
+screen as soon as it is done, possibly with tearing. `renut_vsync = true` waits for the refresh (FIFO).
 
 On a screen that is not 16:9 the whole picture is shown with black bars (letterbox or pillarbox), never stretched;
 `futari_fill_crop = true` fills the screen instead and trims up to 15 % of the picture's edges. The log line
