@@ -17,7 +17,8 @@ Linux the renderer runs on Vulkan through plume instead of deko3d. Nothing is em
 container.
 
 I built and tested it on an AYN Odin 3 Ultra running Armada (Adreno 830 with Mesa Turnip), compiled inside a Fedora
-toolbox and launched natively from Steam Game Mode. The same tree builds for x86-64 Linux with the `linux-amd64` preset.
+toolbox and launched natively from Steam Game Mode. The x86-64 build (`linux-amd64` preset) is tested on a laptop with
+an NVIDIA RTX 5080 on KDE Plasma Wayland at 240 Hz and on a Steam Deck.
 
 The Linux changes are also offered upstream in
 [ChanseyIsTheBest/futari-nx#2](https://github.com/ChanseyIsTheBest/futari-nx/pull/2). For the Switch version, use
@@ -26,6 +27,60 @@ upstream and its installer page.
 > [!NOTE]
 > You need your own copy of the Xbox 360 disc, either a disc image (`.iso`) or a folder you extracted it into. The Black
 > Label and Ver 1.01 DLC packages (`Content/<profile>/435A07D7/00000002`) are optional.
+
+## FAQ
+
+### Windows/macOS?
+
+Not supported by this fork: it is built and tested on Linux only (x86-64 and AArch64). The source still contains
+upstream futari-nx's Windows PC build ([docs/building.md](docs/building.md)), untouched and untested here.
+[springah/futari_recomp](https://github.com/springah/futari_recomp) builds Futari for Windows and macOS with the SDK's
+emulated GPU, and upstream [futari-nx](https://github.com/ChanseyIsTheBest/futari-nx) builds for the Nintendo Switch and
+Windows.
+
+### Is this a native port?
+
+Yes, for the game code and the graphics. The PowerPC code of `default.xex` and the eight game cores is recompiled ahead
+of time into C++ and runs directly on the processor, with no CPU emulation or JIT, and reNut's Direct3D-level renderer
+draws the game's Direct3D calls with Vulkan, with no Xbox 360 GPU emulation. The game mixes its own audio, and the Xbox
+kernel and XAM calls are Xenia-derived reimplementations in C++.
+
+### Is this AI?
+
+Mostly no. The vast majority of this project is code ported and retooled from other recompilation projects, such as
+futari-nx (the Switch port this is built on), reNut (the renderer and its Wayland window), UnleashedRecomp (frame
+pacing, window icon), springah's futari_recomp (exit from the title screen) and SDOJ-Recomp (a reference for the
+input-lag work), made to work for Futari on Linux. LLM assistance (Claude) was used in the porting.
+
+### Does this port reduce input lag?
+
+Yes, it is the main goal of this fork, and it is on by default: the game reads the pad as late in its frame as it
+safely can, its vertical blank follows the display's refresh, and vsync is off by default. On a laptop with an NVIDIA
+RTX 5080 on KDE Plasma Wayland at 240 Hz I measured 4.7 to 6.3 ms on average from pad read to present, with vsync off.
+The details are under "Input latency" below.
+
+### What does futari_vblank_display_sync do?
+
+It is on by default, and it is not vsync. Vsync (`renut_vsync`, off by default) decides whether a finished picture
+waits for the display's next refresh. `futari_vblank_display_sync` decides when the game starts each frame: the game's
+60 Hz vertical blank (where it reads the pad and starts the frame) follows the display's real refresh instead of a
+timer of its own that drifts against the display. The refresh is worked out from when pictures appear on screen with
+Vulkan's `VK_KHR_present_wait`. A display at a whole multiple of 60 Hz (60, 120, 180, 240 Hz) is followed. At any
+other rate, without present wait, or where the times do not follow the display (a desktop's Xwayland), the game keeps
+its 60 Hz timer and the log says so. The game still runs at 60 frames a second either way. On a 60 Hz display the
+vertical blank also waits for the previous picture to be shown (`futari_vblank_wait_shown`), so no picture stays
+queued after a stall. The 4.7 to 6.3 ms above was measured with it on.
+
+### Will audio become native?
+
+It already is. Futari's music and effects are plain PCM that the game mixes itself; the Xbox 360's XMA decoder is
+never used, and the SDK only passes the finished mix to SDL.
+
+### Can this help with other CAVE games?
+
+It already has: [Espgaluda II recomp](https://github.com/cerroverb/espgaluda2-recomp) uses this renderer port and its
+input-lag work. Other CAVE games on the Xbox 360 could start from it too, alongside
+[SDOJ-Recomp](https://github.com/eandis/SDOJ-Recomp).
 
 ## Installing
 
@@ -131,15 +186,6 @@ Game Mode so the controller shows up.
 
 The Windows and Switch builds are untouched. For the port itself (every optimisation, the renderer, audio, and how
 each change was checked) see upstream's README and [docs/futari-notes.md](docs/futari-notes.md).
-
-## FAQ
-
-### Is this AI?
-
-Mostly no. The vast majority of this project is code ported and retooled from other recompilation projects, such as
-futari-nx (the Switch port this is built on), reNut (the renderer and its Wayland window), UnleashedRecomp (frame
-pacing, window icon), springah's futari_recomp (exit from the title screen) and SDOJ-Recomp (a reference for the
-input-lag work), made to work for Futari on Linux. LLM assistance (Claude) was used in the porting.
 
 ## Credits
 
