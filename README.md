@@ -114,7 +114,7 @@ The details and the related settings are in the "Input latency" section of
 On a Wayland desktop (KDE Plasma 6.7 and others with the fifo-v1 protocol) the game runs as a native Wayland window;
 elsewhere through X11, and under gamescope through gamescope's XWayland. `SDL_VIDEO_DRIVER=x11` forces X11. On a
 screen that is not 16:9 the picture keeps its shape with black bars (`futari_fill_crop = true` fills the screen and
-trims the edges instead). On the title screen, B on a pad or Escape on the keyboard (`bind_title_exit`) quits the game. On handhelds whose built-in pad is managed by InputPlumber or Steam Input, launch it from Steam
+trims the edges instead). Every setting, with its default and what it does: [docs/settings.md](docs/settings.md). On the title screen, B on a pad or Escape on the keyboard (`bind_title_exit`) quits the game. On handhelds whose built-in pad is managed by InputPlumber or Steam Input, launch it from Steam
 Game Mode so the controller shows up.
 
 ## What changed from upstream
