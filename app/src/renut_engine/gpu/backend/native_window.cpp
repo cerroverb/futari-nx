@@ -157,7 +157,7 @@ bool GetRenderWindowPixelSize(uint32_t &width, uint32_t &height) {
 // gives every window: SDL's own surface needs SDL_WINDOW_VULKAN, which the
 // SDK's window lacks.
 // futari-linux (2026-10-28): from reNut (github.com/masterspike52/reNut
-// 688ff73, gpu/backend/native_window.cpp), unchanged but for this comment.
+// 688ff73, gpu/backend/native_window.cpp), unchanged but for this comment and the #if, which also leaves out the Switch.
 
 namespace {
 

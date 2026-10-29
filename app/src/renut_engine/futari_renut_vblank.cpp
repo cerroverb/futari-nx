@@ -394,8 +394,10 @@ bool FromPresents(double nominal_ns) {
   // exactly one a refresh (after a stall that sent two in one refresh): every image is then shown a refresh late, a
   // frame more input lag, and the phase above only moves earlier (espgaluda2-recomp measured it on the Deck: input ->
   // GPU done 33.6 ms instead of 17-19). UnleashedRecomp's answer (github.com/hedge-dev/UnleashedRecomp cf829a9,
-  // UnleashedRecomp/gpu/video.cpp Video::WaitOnSwapChain, plume's VulkanSwapChain::wait with a maximum frame latency of
-  // 1): a frame starts only once the previous image is on screen. Here the frame starts at the guest vblank, so the
+  // UnleashedRecomp/gpu/video.cpp Video::WaitOnSwapChain, plume's VulkanSwapChain::wait; corrected 2026-10-29 after an
+  // independent review: UnleashedRecomp's default MaxFrameLatency is 2 (user/config_def.h), so by default it waits for
+  // the image before the newest one; the wait here is its MaxFrameLatency = 1 setting): a frame starts only once the
+  // newest image is on screen. Here the frame starts at the guest vblank, so the
   // vblank waits, at most a frame, until the observer has seen the newest present shown; after a stall that one vblank
   // comes a refresh later and the queue is empty again. Only at one refresh a game frame: with more refreshes a frame the
   // display takes images faster than the game makes them, and a queue empties by itself.

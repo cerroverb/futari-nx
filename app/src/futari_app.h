@@ -153,7 +153,7 @@ class FutariApp : public rex::ReXApp {
           auto* rt = runtime();
           return rt ? static_cast<rex::input::InputSystem*>(rt->input_system()) : nullptr;
         },
-        [this] { return imgui_drawer(); },
+        [this] { return InteractiveOverlayOpen(); },
         [this](std::function<void()> function) { app_context().CallInUIThread(std::move(function)); },
         [this] {
           if (rex::ui::Window* w = window()) w->RequestClose();

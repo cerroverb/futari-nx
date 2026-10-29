@@ -11,15 +11,12 @@
 namespace rex::input {
 class InputSystem;
 }
-namespace rex::ui {
-class ImGuiDrawer;
-}
 
 namespace futari::title_exit {
 
 struct Host {
   std::function<rex::input::InputSystem*()> input;      // the runtime's input system, or nullptr
-  std::function<rex::ui::ImGuiDrawer*()> drawer;         // the app's ImGui drawer, or nullptr
+  std::function<bool()> overlay_open;                    // UI thread: an SDK overlay that takes input is open
   std::function<void(std::function<void()>)> in_ui;      // runs a function on the UI thread
   std::function<void()> request_close;                   // UI thread: close as the title-bar close button does
 };

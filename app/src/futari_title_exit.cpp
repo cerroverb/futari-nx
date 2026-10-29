@@ -4,7 +4,9 @@
 // native/futari_native_frame.cpp. Its on-screen hint (an ImGuiDialog) and its overlay check (imgui_internal.h) are
 // left out: here the executable holds Renut's own, hidden ImGui copy, so ImGui calls from app code reach that copy,
 // not the SDK's context in librexruntime (the hint crashed the UI thread in ImGui::SetNextWindowPos). An open SDK
-// overlay is found with the SDK's own ImGuiDrawer::HasDialogs on the UI thread instead.
+// overlay that takes input is found with ReXApp::InteractiveOverlayOpen (the members the SDK's input-active callback
+// checks) on the UI thread instead. A pad's B needs no check here: while an overlay takes input the SDK's SDL driver
+// gives the game an untouched pad (sdl_input_driver.cpp GetDeviceState).
 
 #include "futari_title_exit.h"
 
@@ -22,7 +24,6 @@
 #include <rex/input/input_system.h>
 #include <rex/logging.h>
 #include <rex/ppc/context.h>
-#include <rex/ui/imgui_drawer.h>
 #include <rex/ui/keybinds.h>
 
 namespace futari::title_exit {
@@ -65,8 +66,7 @@ std::string TitleExitKeyName() {
 // Safe from any thread. While an SDK overlay (F4 settings, console, ...) is open, B and Escape belong to it.
 void RequestExit(std::string source) {
   g_host.in_ui([source = std::move(source)] {
-    rex::ui::ImGuiDrawer* drawer = g_host.drawer();
-    if (drawer && drawer->HasDialogs()) {
+    if (g_host.overlay_open()) {
       return;
     }
     if (g_exit_requested.exchange(true, std::memory_order_acq_rel)) {

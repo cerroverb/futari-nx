@@ -255,6 +255,9 @@ class ReXApp : public ui::WindowedApp, public ui::WindowListener, public ui::Win
   Runtime* runtime() const { return runtime_.get(); }
   ui::Window* window() const { return window_.get(); }
   ui::ImGuiDrawer* imgui_drawer() const { return imgui_drawer_.get(); }
+  // futari-linux (2026-10-29): whether an overlay that takes input is open (console, settings, achievements list), the
+  // same members the input-active callback in rex_app.cpp checks; the debug overlay and the achievement pop-up take none.
+  bool InteractiveOverlayOpen() const { return console_overlay_ || settings_overlay_ || achievements_overlay_; }
   ui::ImmediateDrawer* immediate_drawer() const { return immediate_drawer_.get(); }
   system::AchievementManager& achievements() const;
 
