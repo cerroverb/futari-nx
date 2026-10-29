@@ -72,9 +72,9 @@ REXCVAR_DEFINE_BOOL(renut_vsync, false, "Nuts&Bolts/Graphics",
 // futari-linux (2026-10-28): the trim of FitFrame made optional, letterbox bars by default (a 16:9 frame on a 16:10
 // panel lost about 5 % of each side).
 REXCVAR_DEFINE_BOOL(futari_fill_crop, false, "Nuts&Bolts/Graphics",
-                    "On a window that is not the frame's shape: on, the frame fills it and up to 15 % of the frame is "
-                    "trimmed from its edges (bars only past that); off, the whole frame with letterbox bars. Never "
-                    "stretched.");
+                    "On a screen narrower than 16:9 (16:10, 4:3): on, the picture fills the height and up to 15 % of its "
+                    "width is trimmed from the sides, which hold only the wallpaper (bars past that); off, the whole "
+                    "picture with letterbox bars. The top and bottom are never trimmed. Never stretched.");
 
 namespace renut::gpu {
 
@@ -158,12 +158,11 @@ FrameFit FitFrame(uint32_t out_w, uint32_t out_h, uint32_t src_w, uint32_t src_h
   }
   const float out_aspect = float(out_w) / float(out_h);
   float src_aspect = float(src_w) / float(src_h);
+  // futari-linux (2026-10-29: never cut the play field): only the sides are trimmed, which hold the
+  // wallpaper; a screen wider than the frame (21:9) keeps the whole height and gets bars at the sides.
   if (src_aspect > out_aspect) {
     fit.visible[0] = std::max(out_aspect / src_aspect, 1.0f - kMaxTrim);
     src_aspect *= fit.visible[0];
-  } else {
-    fit.visible[1] = std::max(src_aspect / out_aspect, 1.0f - kMaxTrim);
-    src_aspect /= fit.visible[1];
   }
   float w = float(out_w), h = float(out_h);
   if (src_aspect > out_aspect)

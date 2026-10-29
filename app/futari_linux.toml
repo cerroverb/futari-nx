@@ -11,8 +11,8 @@ futari_renderer_native = true
 
 # Window: fullscreen = false for a window (window_width / window_height set its size).
 fullscreen = true
-# A screen that is not 16:9 (16:10, 4:3): letterbox bars by default. true fills it, trimming up to 15 % of the
-# picture's edges. Never stretched.
+# A screen narrower than 16:9 (16:10, 4:3): letterbox bars by default. true fills it, trimming up to 15 % of the
+# picture's width at the sides; the top and bottom are never trimmed. Never stretched. (F4 opens the settings window.)
 futari_fill_crop = false
 # Vsync: false (default) shows each picture at once, the least input lag, tearing possible; true waits for the
 # screen's refresh.

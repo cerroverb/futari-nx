@@ -1,42 +1,44 @@
 # futari-linux: settings
 
-Every setting can be given as a launch option or written into the settings file next to the game:
+## The settings window
+
+Press **F4** in the game: a window lists every setting by category, with a search box at the top. Change a value,
+then press **Save to config**; it is written to `futari.toml` next to the game. Settings marked as needing a restart take
+effect at the next start. On a handheld without a keyboard (Steam Deck, X20), map a button to F4 in Steam Input.
+The window is the rexglue SDK's own (src/ui/overlay/settings_overlay.cpp).
+
+The same settings also work as launch options:
 
 ```sh
-./futari.sh --renut_resolution=1440p --renut_vsync=false
+./futari.sh --renut_resolution=1440p
 ```
 
-or in `futari.toml`:
-
-```toml
-renut_resolution = "1440p"
-renut_vsync = false
-```
-
-The names, types, defaults and descriptions below are copied by a script from the source code (`gen_settings.py` in ~/projects/provenance-check on the build machine),
-so they say exactly what the program does. Generated 2026-10-29.
+The names, types, defaults and descriptions below are copied by a script from the source code (`gen_settings.py`
+and `compose_settings.py` in ~/projects/provenance-check on the build machine), so they say exactly what
+the program does. Generated 2026-10-29.
 
 ## Settings for players
 
 | Option | Type | Default | Category | What it does (from the code) | Defined in |
 | --- | --- | --- | --- | --- | --- |
 | `renut_resolution` | string | `"720p"` | Nuts&Bolts/Graphics | Internal render resolution, by its height: 480p, 720p (the game's own), 1080p, 1440p or 4K (2160 lines). Applies from the next frame. | `app/src/renut_engine/gpu/render/surfaces.cpp` |
-| `fullscreen` | bool | `true` | UI/Window | Start the window in fullscreen mode | `sdk/src/ui/window.cpp` |
+| `fullscreen` | bool | `true` | UI/Window | Start the window in fullscreen mode | SDK `sdk/src/ui/window.cpp` |
 | `renut_vsync` | bool | `false` | Nuts&Bolts/Graphics | Show each frame at the display's refresh: no tearing, and the game runs at the refresh rate (frame_cap then only limits below it). Off shows frames at once, with tearing. | `app/src/renut_engine/gpu/backend/present.cpp` |
-| `futari_fill_crop` | bool | `false` | Nuts&Bolts/Graphics | On a window that is not the frame's shape: on, the frame fills it and up to 15 % of the frame is trimmed from its edges (bars only past that); off, the whole frame with letterbox bars. Never stretched. | `app/src/renut_engine/gpu/backend/present.cpp` |
-| `monitor` | int32 | `0` | UI/Window | Monitor index to display on (0 = default, 1 = primary, 2 = second monitor, etc.) | `sdk/src/ui/window.cpp` |
-| `window_width` | int32 | `0` | UI/Window | Startup window width in logical pixels (0 = use app default) | `sdk/src/ui/window.cpp` |
-| `window_height` | int32 | `0` | UI/Window | Startup window height in logical pixels (0 = use app default) | `sdk/src/ui/window.cpp` |
-| `video_driver` | string | `""` | UI/Window | SDL video driver to use, such as "wayland" or "x11". Empty picks SDL's default for the session | `sdk/src/ui/window.cpp` |
+| `futari_fill_crop` | bool | `false` | Nuts&Bolts/Graphics | On a screen narrower than 16:9 (16:10, 4:3): on, the picture fills the height and up to 15 % of its width is trimmed from the sides, which hold only the wallpaper (bars past that); off, the whole picture with letterbox bars. The top and bottom are never trimmed. Never stretched. | `app/src/renut_engine/gpu/backend/present.cpp` |
+| `monitor` | int32 | `0` | UI/Window | Monitor index to display on (0 = default, 1 = primary, 2 = second monitor, etc.) | SDK `sdk/src/ui/window.cpp` |
+| `window_width` | int32 | `0` | UI/Window | Startup window width in logical pixels (0 = use app default) | SDK `sdk/src/ui/window.cpp` |
+| `window_height` | int32 | `0` | UI/Window | Startup window height in logical pixels (0 = use app default) | SDK `sdk/src/ui/window.cpp` |
+| `video_driver` | string | `""` | UI/Window | SDL video driver to use, such as "wayland" or "x11". Empty picks SDL's default for the session | SDK `sdk/src/ui/window.cpp` |
 | `futari_vblank_display_sync` | bool | `true` | Futari | The game's vertical blank follows the display's own refresh (Switch: the vi vsync event; Vulkan elsewhere: when the presents are shown, VK_KHR_present_wait) instead of a 60 Hz timer of its own (input lag, judder); false = the timer | `app/src/me/me_native_system.cpp` |
 | `futari_vblank_phase_auto` | bool | `true` | Futari | With futari_vblank_display_sync: find the latest guest vblank after the display's refresh at which the image is still finished for the next refresh (less input lag); false = futari_vblank_delay_us | `app/src/me/me_native_system.cpp` |
 | `futari_vblank_wait_shown` | bool | `true` | Futari | With futari_vblank_display_sync on a display of one refresh a game frame (60 Hz): the guest vblank waits (at most a frame) until the newest image is on screen, so no image stays queued behind another (a frame more input lag) | `app/src/renut_engine/futari_renut_vblank.cpp` |
 | `futari_late_input` | bool | `true` | Futari | Input lag: the game reads its controllers as late as its frame allows (its first read after each Swap waits by the time the frame can spare); false = right after the Swap, as before | `app/src/native/futari_native_frame.cpp` |
 | `futari_dlc_dir` | string | `""` | Futari | Folder with Xbox 360 DLC to install at startup (empty = dlc/ next to the executable): package files, or unpacked packages in <folder>/00000002/<package name>/ | `app/src/futari_dlc.cpp` |
-| `log_level` | string | `"info"` | Log | Global log level: trace, debug, info, warn, error, critical, off | `sdk/src/core/logging.cpp` |
+| `log_level` | string | `"info"` | Log | Global log level: trace, debug, info, warn, error, critical, off | SDK `sdk/src/core/logging.cpp` |
 
 | Key binding | Default key | What it does (from the code) | Defined in |
 | --- | --- | --- | --- |
+| `bind_settings` | F4 | Toggle settings overlay | SDK `sdk/src/ui/rex_app.cpp` |
 | `bind_title_exit` | Escape | Exit the game from the title screen | `app/src/futari_title_exit.cpp` |
 
 Notes (not from the code):
@@ -45,8 +47,8 @@ Notes (not from the code):
 ## Useful launch options
 
 - `--renut_resolution=1440p` for a 2560x1440 or 2560x1600 screen (fullscreen is the default).
+- `--futari_fill_crop=true` to fill a 16:10 screen; only the sides are trimmed.
 - `--renut_vsync=true` to wait for the screen's refresh (no tearing, a little more input lag).
-- `--futari_fill_crop=true` to fill a 16:10 screen, trimming the picture's edges.
 
 ## Every option of this project
 
@@ -428,7 +430,7 @@ the tested setting. The SDK's own options (window, input, logging, emulated GPU)
 | `banjo_native_skip_vs` | string | `""` | Nuts&Bolts/Graphics | Diagnostic: comma-separated library numbers of vertex shaders whose draws are skipped | `app/src/me/futari/futari_native_draws.cpp` |
 | `banjo_renderdoc_capture_s` | int32 | `0` | Nuts&Bolts/Graphics | Diagnostic: this many seconds after the renderer starts, ask RenderDoc (when its layer is loaded) to capture one frame into capturas/rdc next to the exe (0 = off) | `app/src/me/me_native_system.cpp` |
 | `banjo_trace_frame_s` | int32 | `0` | Nuts&Bolts/Graphics | Diagnostic: this many seconds after the renderer starts, log one whole frame: every resolve, every render-target change and every draw that samples a resolve destination (0 = off) | `app/src/me/me_native_system.cpp` |
-| `futari_fill_crop` | bool | `false` | Nuts&Bolts/Graphics | On a window that is not the frame's shape: on, the frame fills it and up to 15 % of the frame is trimmed from its edges (bars only past that); off, the whole frame with letterbox bars. Never stretched. | `app/src/renut_engine/gpu/backend/present.cpp` |
+| `futari_fill_crop` | bool | `false` | Nuts&Bolts/Graphics | On a screen narrower than 16:9 (16:10, 4:3): on, the picture fills the height and up to 15 % of its width is trimmed from the sides, which hold only the wallpaper (bars past that); off, the whole picture with letterbox bars. The top and bottom are never trimmed. Never stretched. | `app/src/renut_engine/gpu/backend/present.cpp` |
 | `renut_export_spirv_package` | string | `""` | Nuts&Bolts/Graphics | Write the built-in game shaders as a SPIR-V package to this path at startup (tests) | `app/src/renut_engine/gpu/render/shader_library.cpp` |
 | `renut_gpu_backend` | string | `"d3d12"` | Nuts&Bolts/Graphics | Renderer backend: d3d12 or vulkan. Takes effect after a restart. Non-Windows builds always use vulkan. banjo-nx: deko3d on the Switch, plume's deko3d back end (docs/deko3d-renderer.md); elsewhere it means vulkan. | `app/src/renut_engine/gpu/backend/backend.cpp` |
 | `renut_gpu_dred` | bool | `false` | Nuts&Bolts/Graphics | D3D12 device removed diagnostics (DRED breadcrumbs and page faults) for debugging GPU crashes. Costs CPU and GPU time on every command. Takes effect after a restart. | `app/src/renut_engine/gpu/backend/backend.cpp` |
