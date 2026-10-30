@@ -689,6 +689,12 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
             COMMAND "${CMAKE_COMMAND}" -E copy_if_different $<TARGET_FILE:rexruntime> $<TARGET_FILE_DIR:futari>
             VERBATIM)
     endif()
+    # futari-linux (2026-10-29): the GPU plugin's build-tree RUNPATH was the build folder's absolute path; $ORIGIN
+    # finds librexruntime.so beside it the same way and carries no path of the build machine.
+    if(TARGET rexgpu-xenos)
+        set_target_properties(rexgpu-xenos PROPERTIES BUILD_WITH_INSTALL_RPATH ON INSTALL_RPATH "\$ORIGIN"
+                                                  INSTALL_RPATH_USE_LINK_PATH OFF)
+    endif()
 endif()
 
 if(FUTARI_LINUX_ARM64)
