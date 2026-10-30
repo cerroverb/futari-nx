@@ -71,11 +71,6 @@ its 60 Hz timer and the log says so. The game still runs at 60 frames a second e
 vertical blank also waits for the previous picture to be shown (`futari_vblank_wait_shown`), so no picture stays
 queued after a stall. The 4.7 to 6.3 ms above was measured with it on.
 
-### Will audio become native?
-
-It already is. Futari's music and effects are plain PCM that the game mixes itself; the Xbox 360's XMA decoder is
-never used, and the SDK only passes the finished mix to SDL.
-
 ### Can this help with other CAVE games?
 
 It already has: [Espgaluda II recomp](https://github.com/cerroverb/espgaluda2-recomp) uses this renderer port and its
