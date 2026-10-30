@@ -1,0 +1,74 @@
+name: Build Linux AArch64
+
+# futari-linux's AArch64 release archive (tools/linux/build.sh --release, tools/linux/package.sh --release) on GitHub's
+# ARM runner (Ubuntu 24.04). The game files the code generator needs (default.xex and the eight cores) and the release
+# build's shader table come from the private repository cerroverb/futari-linux-private-assets through a read-only deploy
+# key (secret PRIVATE_ASSETS_KEY); nothing of them is copied into this repository, the log or the archive. The runner
+# has no DXC, so the renderer's own shaders come prebuilt (prebuilt/host_shaders, FUTARI_PREBUILT_GPU_DIR).
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - ci/arm64
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 350
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Fetch the private build inputs
+        env:
+          KEY: ${{ secrets.PRIVATE_ASSETS_KEY }}
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$KEY" > ~/.ssh/assets_key
+          chmod 600 ~/.ssh/assets_key
+          ssh-keyscan -t ed25519 github.com >> ~/.ssh/known_hosts 2>/dev/null
+          GIT_SSH_COMMAND="ssh -i ~/.ssh/assets_key -o IdentitiesOnly=yes" \
+            git clone -q --depth 1 git@github.com:cerroverb/futari-linux-private-assets.git "$RUNNER_TEMP/assets"
+          rm -f ~/.ssh/assets_key
+          ls "$RUNNER_TEMP/assets/futari/media/Module" | wc -l
+
+      - name: Install packages
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake ninja-build pkg-config git python3 python3-xxhash glslang-tools wget \
+            libvulkan-dev libasound2-dev libpulse-dev libpipewire-0.3-dev libx11-dev libx11-xcb-dev libxext-dev \
+            libxrandr-dev libxcursor-dev libxfixes-dev libxi-dev libxss-dev libxtst-dev libxkbcommon-dev \
+            libdrm-dev libgbm-dev libegl1-mesa-dev libdbus-1-dev libibus-1.0-dev libudev-dev libwayland-dev \
+            libdecor-0-dev liburing-dev libgtk-3-dev
+          wget -qO llvm.sh https://apt.llvm.org/llvm.sh
+          chmod +x llvm.sh
+          sudo ./llvm.sh 20
+          sudo ln -sf /usr/bin/clang-20 /usr/local/bin/clang
+          sudo ln -sf /usr/bin/clang++-20 /usr/local/bin/clang++
+
+      - name: Build
+        env:
+          FUTARI_PREBUILT_GPU_DIR: ${{ runner.temp }}/assets/futari/gpu
+        run: tools/linux/build.sh --game-dir "$RUNNER_TEMP/assets/futari" --preset linux-arm64 --release --jobs 3
+
+      - name: Package
+        run: |
+          tools/linux/package.sh --preset linux-arm64 --release
+          f=out/futari-linux-aarch64.tar.gz
+          ls -la $f
+          tar -tzf $f
+          mkdir -p /tmp/check && tar -xzf $f -C /tmp/check
+          ! strings /tmp/check/*/* 2>/dev/null | grep -q -E "/home/runner|default\.xex$"
+          file /tmp/check/*/futari
+
+      - name: Upload
+        uses: actions/upload-artifact@v4
+        with:
+          name: futari-linux-aarch64
+          path: out/futari-linux-aarch64.tar.gz
+          if-no-files-found: error

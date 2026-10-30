@@ -85,7 +85,23 @@ set(RENUT_DXC_BIN_DIR "${RENUT_XENOS_RECOMP_DIR}/thirdparty/dxc-bin/bin/x64")
 # PATH, or FUTARI_DXC. Its libdxcompiler is what Renut's XenosRecomp links (thirdparty/dxc-bin/CMakeLists.txt). The
 # SPIR-V it writes is the same on every host; a different DXC version can number its values differently.
 set(FUTARI_DXC "" CACHE FILEPATH "DXC for the host shaders (empty: XenosRecomp's dxc-bin, or dxc on the PATH on Linux AArch64)")
-if(FUTARI_DXC)
+# futari-linux (2026-10-30, Linux AArch64 on GitHub's ARM runners, which have no DXC; as espgaluda2-recomp's
+# ESPGALUDA2_PREBUILT_GPU_DIR): the shader outputs another host made are used as they are, and neither DXC nor
+# XenosRecomp runs: prebuilt/host_shaders/*.spirv.h (the renderer's own shaders, SPIR-V, the same on every CPU) and the
+# release build's shader table (renut_gpu/shader_cache_release.cpp, FUTARI_LINUX_RELEASE_SHADERS) in this folder.
+set(FUTARI_PREBUILT_GPU_DIR "" CACHE PATH "A folder with shader_cache_release.cpp from another build (no DXC)")
+if(FUTARI_PREBUILT_GPU_DIR)
+    if(NOT FUTARI_LINUX_RELEASE_SHADERS)
+        message(FATAL_ERROR "FUTARI_PREBUILT_GPU_DIR is for release builds (FUTARI_LINUX_RELEASE_SHADERS=ON)")
+    endif()
+    set(RENUT_DXC "")
+    function(banjo_renut_shader_cache_override TARGET)
+        set(release_cpp "${RENUT_GPU_GEN_DIR}/shader_cache_release.cpp")
+        configure_file("${FUTARI_PREBUILT_GPU_DIR}/shader_cache_release.cpp" "${release_cpp}" COPYONLY)
+        target_sources(${TARGET} PRIVATE "${release_cpp}")
+        set_source_files_properties("${release_cpp}" PROPERTIES SKIP_PRECOMPILE_HEADERS ON)
+    endfunction()
+elseif(FUTARI_DXC)
     set(RENUT_DXC "${FUTARI_DXC}")
 elseif(CMAKE_HOST_WIN32)
     set(RENUT_DXC "${RENUT_DXC_BIN_DIR}/dxc.exe")
@@ -106,6 +122,12 @@ endif()
 # to SPIR-V (always) and DXIL (Windows), as headers exposing
 # g_<stem>_spirv / g_<stem>_dxil.
 function(renut_host_shader TARGET STEM PROFILE)
+    if(FUTARI_PREBUILT_GPU_DIR)  # futari-linux: see FUTARI_PREBUILT_GPU_DIR above
+        set(out "${RENUT_GPU_GEN_DIR}/host_shaders/${STEM}.spirv.h")
+        configure_file("${CMAKE_SOURCE_DIR}/../prebuilt/host_shaders/${STEM}.spirv.h" "${out}" COPYONLY)
+        target_sources(${TARGET} PRIVATE "${out}")
+        return()
+    endif()
     set(src "${RENUT_GPU_DIR}/shaders/host/${STEM}.hlsl")
     file(GLOB host_includes "${RENUT_GPU_DIR}/shaders/host/*.hlsli")
 
