@@ -1,0 +1,113 @@
+name: Build Windows (untested)
+
+# futari-nx's Windows PC build (docs/building.md, sections 1-3), unchanged by this fork and not supported by it: built
+# on GitHub's Windows runner only because it is already in the tree. Toolchain as docs/building.md names it: VS 2022
+# (the runner's), LLVM clang 20, DXC (Microsoft's release, into XenosRecomp's dxc-bin) and glslangValidator (Khronos'
+# release). The game files the code generator needs come from the private repository cerroverb/futari-linux-private-assets
+# through a read-only deploy key (secret PRIVATE_ASSETS_KEY) and are not copied into the archive. The translated game
+# shaders are compiled into the executable, as UnleashedRecomp's and re:Blue's releases do.
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - ci/windows
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: windows-2022
+    timeout-minutes: 350
+    defaults:
+      run:
+        shell: pwsh
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Fetch the private build inputs
+        shell: bash
+        env:
+          KEY: ${{ secrets.PRIVATE_ASSETS_KEY }}
+        run: |
+          mkdir -p ~/.ssh && printf '%s\n' "$KEY" > ~/.ssh/assets_key && chmod 600 ~/.ssh/assets_key
+          ssh-keyscan -t ed25519 github.com >> ~/.ssh/known_hosts 2>/dev/null
+          GIT_SSH_COMMAND="ssh -i ~/.ssh/assets_key -o IdentitiesOnly=yes" \
+            git clone -q --depth 1 git@github.com:cerroverb/futari-linux-private-assets.git "$RUNNER_TEMP/assets"
+          rm -f ~/.ssh/assets_key
+          mkdir -p assets/game_root/media
+          cp "$RUNNER_TEMP/assets/futari/default.xex" assets/game_root/
+          cp -r "$RUNNER_TEMP/assets/futari/media/Module" assets/game_root/media/
+          rm -rf "$RUNNER_TEMP/assets"
+          ls assets/game_root/media/Module | wc -l
+
+      - name: Toolchain (LLVM 20, DXC, glslangValidator, Python modules)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          choco install llvm --version=20.1.8 -y --no-progress
+          $dxc = "app/thirdparty/reblue-XenosRecomp/thirdparty/dxc-bin"
+          gh release download -R microsoft/DirectXShaderCompiler -p "dxc_*.zip" -D "$env:RUNNER_TEMP/dxc"
+          Expand-Archive (Get-ChildItem "$env:RUNNER_TEMP/dxc/*.zip")[0].FullName -DestinationPath "$env:RUNNER_TEMP/dxc/x" -Force
+          New-Item -ItemType Directory -Force "$dxc/bin/x64", "$dxc/lib/x64" | Out-Null
+          Copy-Item "$env:RUNNER_TEMP/dxc/x/bin/x64/*" "$dxc/bin/x64/" -Force
+          Copy-Item "$env:RUNNER_TEMP/dxc/x/lib/x64/*" "$dxc/lib/x64/" -Force
+          Copy-Item "$env:RUNNER_TEMP/dxc/x/inc/*" "$dxc/inc/" -Force
+          gh release download main-tot -R KhronosGroup/glslang -p "glslang-main-windows-Release.zip" -D "$env:RUNNER_TEMP/glslang"
+          Expand-Archive "$env:RUNNER_TEMP/glslang/glslang-main-windows-Release.zip" -DestinationPath "$env:RUNNER_TEMP/glslang/x" -Force
+          New-Item -ItemType Directory -Force "out/glslang/StandAlone" | Out-Null
+          Copy-Item (Get-ChildItem -Recurse "$env:RUNNER_TEMP/glslang/x" -Filter glslangValidator.exe)[0].FullName "out/glslang/StandAlone/"
+          python -m pip install --quiet xxhash numpy
+          "FUTARI_LLVM=C:\Program Files\LLVM" | Out-File -Append $env:GITHUB_ENV
+          "FUTARI_VSDIR=C:\Program Files\Microsoft Visual Studio\2022\Enterprise" | Out-File -Append $env:GITHUB_ENV
+
+      - name: SDK third-party sources
+        run: python tools/fetch_thirdparty.py
+
+      - name: Code generator (host)
+        run: |
+          powershell -NoProfile -ExecutionPolicy Bypass -File tools\win\run.ps1 out\host_configure.log "cmake -S sdk -B out/host -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DREXGLUE_ENABLE_TRACY=OFF -DCMAKE_C_FLAGS=-march=x86-64-v2 -DCMAKE_CXX_FLAGS=-march=x86-64-v2"
+          powershell -NoProfile -ExecutionPolicy Bypass -File tools\win\run.ps1 out\host_build.log "cmake --build out/host --target rexglue -j 4"
+
+      - name: Code generation and the post-codegen steps
+        run: |
+          powershell -NoProfile -ExecutionPolicy Bypass -File tools\codegen.ps1 -Perf
+          python tools/renut_futari_hooks.py
+          python tools/post_codegen.py
+          python tools/perf_codegen_post.py --check
+          if (-not (Test-Path out/renut_shader_dump/manifest.csv)) { python tools/renut_dump_shaders.py }
+
+      - name: Build
+        run: |
+          powershell -NoProfile -ExecutionPolicy Bypass -File tools\win\run.ps1 out\pc_configure.log "cmake --preset win-pc -S app -DCMAKE_BUILD_TYPE=Release"
+          powershell -NoProfile -ExecutionPolicy Bypass -File tools\win\run.ps1 out\pc_build.log "cmake --build out/pc -j 3"
+
+      - name: Package
+        run: |
+          $pkg = "package/futari-windows"
+          New-Item -ItemType Directory -Force $pkg | Out-Null
+          Copy-Item out/pc/*.exe, out/pc/*.dll $pkg/
+          Copy-Item app/futari_linux.toml "$pkg/futari.toml"
+          Copy-Item tools/extract_iso.py, LICENSE, THIRD_PARTY_NOTICES.md $pkg/
+          @"
+          Mushihimesama Futari Ver 1.5 (Xbox 360), recompiled - Windows build of futari-linux (from futari-nx).
+          UNTESTED AND UNSUPPORTED: built automatically because the Windows build is already in the source tree.
+          Bug reports for Windows are not handled. Linux is the supported platform.
+
+          You need your own copy of the game. This download contains no game files.
+          1. Install Python 3 and run:  python extract_iso.py "<your disc>.iso" -o game_root
+             (or copy your extracted disc, with default.xex at the top, into a game_root folder here).
+          2. Start futari.exe. Settings: futari.toml (F4 in game).
+          "@ | Out-File -Encoding utf8 "$pkg/README-WINDOWS.txt"
+          Get-ChildItem $pkg | Format-Table Name, Length
+          Compress-Archive -Path $pkg -DestinationPath futari-windows-x64-untested.zip
+
+      - name: Upload
+        uses: actions/upload-artifact@v4
+        with:
+          name: futari-windows-x64-untested
+          path: futari-windows-x64-untested.zip
+          if-no-files-found: error
