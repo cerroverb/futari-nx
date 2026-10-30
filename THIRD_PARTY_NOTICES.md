@@ -1,8 +1,16 @@
 # Third-party notices
 
 This port is built on the work of other projects. Their licenses apply to their code and to the parts of this
-repository derived from it. New code written for this port is copyright (c) 2026 ChanseyIsTheBest and is under the
+repository derived from it. New code written for futari-nx is copyright (c) 2026 ChanseyIsTheBest and is under the
 license of the folder it is in (see below).
+
+**futari-linux's own changes** (everything after futari-nx's last commit, 32a8964) are copyright (c) 2026 cerroverb and
+licensed under GPL-3.0 (`LICENSE`), in every folder, including the changes to these BSD-3-Clause SDK files:
+`sdk/include/rex/input/sdl/sdl_input_driver.h`, `sdk/include/rex/rex_app.h`, `sdk/include/rex/ui/window_sdl.h`,
+`sdk/src/input/sdl/sdl_input_driver.cpp`, `sdk/src/system/kernel_state.cpp`, `sdk/src/ui/window_sdl.cpp`. The SDK's
+BSD-3-Clause license permits this; the unchanged SDK code stays BSD-3-Clause. Two exceptions, code ported into this
+fork under its own terms: springah's BSD-3-Clause title-screen exit (license below) and reNut's code (no license
+file; see "The deko3d renderer" below).
 
 ## Projects this port is derived from
 
@@ -107,3 +115,34 @@ affiliated with or endorsed by any of them.
 - **UnleashedRecomp** (github.com/hedge-dev/UnleashedRecomp, cf829a9): GPL-3.0, as this project. Its wait for the previous image before a
   frame (`futari_vblank_wait_shown`, `app/src/renut_engine/futari_renut_vblank.cpp`) and its app id and window icon
   through SDL (`native_window.cpp`, `futari_app.h`, the SDK's `window_sdl.cpp`) are ported from it.
+
+## futari_recomp (BSD 3-Clause), for `app/src/futari_title_exit.cpp`
+
+BSD 3-Clause License
+
+Copyright (c) 2026, springah
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are met:
+
+1. Redistributions of source code must retain the above copyright notice, this
+   list of conditions and the following disclaimer.
+
+2. Redistributions in binary form must reproduce the above copyright notice,
+   this list of conditions and the following disclaimer in the documentation
+   and/or other materials provided with the distribution.
+
+3. Neither the name of the copyright holder nor the names of its
+   contributors may be used to endorse or promote products derived from
+   this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
