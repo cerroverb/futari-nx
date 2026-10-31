@@ -52,7 +52,7 @@ futari-nx (the Switch port this is built on), reNut (the renderer and its Waylan
 pacing, window icon), springah's futari_recomp (exit from the title screen) and SDOJ-Recomp (a reference for the
 input-lag work), made to work for Futari on Linux. LLM assistance was used in the porting, but under strict supervision and guidelines and with all changes rigorously reviewed and tested.
 
-Quiver Launcher erroroneously went ahead and categorized it as "mostly AI" even though I developed the Linux-side input latency code and ran it through Claude to improve, debug and submit. I suppose they just looked at the LLM doing the submissions and assumed the worst, but I can assure you that I am actually programming shit here. The upstream project seems to be mostly AI, which would make that tag accurate, but my work is LLM assisted, not just vibe coding shit.
+Quiver Launcher erroroneously went ahead and categorized it as "mostly AI" even though I developed the Linux-side input latency code and ran it through Claude to improve, debug and submit. I suppose they just looked at the LLM doing the submissions and assumed the worst, but I can assure you that I am actually programming shit here. The upstream project seems to be mostly AI, which would make that tag accurate, but my work is LLM assisted, not just vibe coding shit. I treat it as an occasional plaintext compiler and a tedious busywork-completer, not as my brain.
 
 ### Does this port reduce input lag?
 
