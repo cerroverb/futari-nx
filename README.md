@@ -50,7 +50,7 @@ kernel and XAM calls are Xenia-derived reimplementations in C++.
 Mostly no. The vast majority of this project is code ported and retooled from other recompilation projects, such as
 futari-nx (the Switch port this is built on), reNut (the renderer and its Wayland window), UnleashedRecomp (frame
 pacing, window icon), springah's futari_recomp (exit from the title screen) and SDOJ-Recomp (a reference for the
-input-lag work), made to work for Futari on Linux. LLM assistance was used in the porting, but under strict supervision and guidelines and with all changes rigorously reviewed and tested. As an example of what I mean by "assisted", I developed the Linux-side input latency code myself, then ran it through Claude to improve, debug, fed it back to me to review, tweak and test, and so on.
+input-lag work), made to work for Futari on Linux. LLM assistance was used in the porting, but under strict supervision and guidelines and with all changes rigorously reviewed and tested. As an example of what I mean by "assisted", I developed/ported most of the Linux-side input latency code myself, then ran it through Claude to improve, debug, fed it back to me to review, tweak and test, and so on.
 
 ### Does this port reduce input lag?
 
