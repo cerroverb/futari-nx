@@ -404,7 +404,7 @@ bool FromPresents(double nominal_ns) {
   const bool wait_shown = every == 1 && REXCVAR_GET(futari_vblank_wait_shown);
   uint64_t shown_waits = 0;  // vblanks that waited more than 1 ms (since the last report)
   // futari-linux (2026-10-28): a check that the grid really follows a display. Under a desktop compositor (KWin through
-  // XWayland, seen on the Legion's NVIDIA and the Odin 3's Turnip) present wait reports when the compositor took each
+  // XWayland, seen on NVIDIA and on Turnip) present wait reports when the compositor took each
   // image, not a refresh, and those times follow the game's own presents, which follow this grid: the grid fed on itself,
   // drifted later every frame, and the game fell from 60 to 7 fps with input -> present growing past 130 ms. Under
   // gamescope the times snap to the display's refreshes and the rate holds. So the vblanks of every 2 s are counted; a

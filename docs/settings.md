@@ -4,7 +4,7 @@
 
 Press **F4** in the game: a window lists every setting by category, with a search box at the top. Change a value,
 then press **Save to config**; it is written to `futari.toml` next to the game. Settings marked as needing a restart take
-effect at the next start. On a handheld without a keyboard (Steam Deck, X20), map a button to F4 in Steam Input.
+effect at the next start. On a handheld without a keyboard, map a button to F4 in Steam Input.
 The window is the rexglue SDK's own (src/ui/overlay/settings_overlay.cpp).
 
 The same settings also work as launch options:

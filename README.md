@@ -16,9 +16,9 @@ Because that port already runs on an ARM processor, its AArch64 code carries str
 Linux the renderer runs on Vulkan through plume instead of deko3d. Nothing is emulated and the game runs without a
 container.
 
-I built and tested it on an AYN Odin 3 Ultra running Armada (Adreno 830 with Mesa Turnip), compiled inside a Fedora
+I built and tested it on an ARM handheld running Armada (Adreno with Mesa Turnip), compiled inside a Fedora
 toolbox and launched natively from Steam Game Mode. The x86-64 build (`linux-amd64` preset) is tested on a laptop with
-an NVIDIA RTX 5080 on KDE Plasma Wayland at 240 Hz and on a Steam Deck.
+an NVIDIA GPU on KDE Plasma Wayland at 240 Hz and on an AMD handheld.
 
 The Linux changes are also offered upstream in
 [ChanseyIsTheBest/futari-nx#2](https://github.com/ChanseyIsTheBest/futari-nx/pull/2). For the Switch version, use
@@ -58,7 +58,7 @@ Quiver Launcher erroneously went ahead and categorized it as "mostly AI" even th
 
 Yes, it is the main goal of this fork, and it is on by default: the game reads the pad as late in its frame as it
 safely can, its vertical blank follows the display's refresh, and vsync is off by default. On a laptop with an NVIDIA
-RTX 5080 on KDE Plasma Wayland at 240 Hz I measured 4.7 to 6.3 ms on average from pad read to present, with vsync off.
+GPU on KDE Plasma Wayland at 240 Hz I measured 4.7 to 6.3 ms on average from pad read to present, with vsync off.
 The details are under "Input latency" below.
 
 ### What does futari_vblank_display_sync do?
