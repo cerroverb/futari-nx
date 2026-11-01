@@ -5,7 +5,7 @@ name: Build Linux AArch64
 # eight cores) and the shader table (the translated shaders) come from the private repository
 # cerroverb/futari-linux-private-assets through a read-only deploy key (secret PRIVATE_ASSETS_KEY); nothing of them is
 # copied into this repository, the log or the archive. The runner has no DXC, so the renderer's own shaders come
-# prebuilt (prebuilt/host_shaders, FUTARI_PREBUILT_GPU_DIR). The archive is tested on ARM hardware before a release.
+# prebuilt (prebuilt/host_shaders, FUTARI_PREBUILT_GPU_DIR). The archive is tested before a release.
 
 on:
   workflow_dispatch:

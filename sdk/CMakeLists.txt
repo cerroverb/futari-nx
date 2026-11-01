@@ -277,9 +277,9 @@ add_subdirectory(src/audio)
 add_subdirectory(src/graphics)
 add_subdirectory(src/system)
 add_subdirectory(src/kernel)
-if(NOT REXGLUE_PLATFORM_SWITCH)
-    # Host tools. Code generation runs on the PC; a Switch build compiles its
-    # output.
+if(NOT REXGLUE_PLATFORM_SWITCH AND NOT CMAKE_CROSSCOMPILING)
+    # Host tools. Code generation runs on the PC; a Switch build, or any cross build (futari-linux 2026-11-01: Linux
+    # AArch64 cross-compiled on x86-64), compiles its output.
     add_subdirectory(src/codegen)
     add_subdirectory(src/rexglue)
 endif()

@@ -80,16 +80,23 @@ input-lag work. Other CAVE games on the Xbox 360 could start from it too, alongs
 
 ## Installing
 
-1. Open the installer page, **https://cerroverb.github.io/futari-linux-installer/**
-2. Choose your disc image or extracted folder (with the DLC files if you have them), pick the processor of the device
-   you will play on (ARM64 or x86-64), and press **Create futari-linux.zip**. Everything runs in your browser and the
-   game files never leave your computer. The page checks your copy, downloads the Linux build and makes the game's
-   shaders from your own executables, the way upstream's installer does for the Switch.
-3. Extract the zip wherever you keep games and start `futari.sh` in the `futari-linux` folder. To play from Steam, add
-   `futari.sh` as a non-Steam game and start it from Game Mode.
+1. Download `futari-linux-x86_64.tar.gz` (PCs, laptops, x86-64 handhelds) or `futari-linux-aarch64.tar.gz` (ARM
+   handhelds) from Releases and extract it wherever you keep games. Running `uname -m` in a terminal on the device
+   prints `x86_64` or `aarch64`. Quiver installs it the same way.
+2. Add your game, one of two ways:
+   - **Disc image:** put the `.iso` next to `futari.sh`. The first start extracts it into `game_root` (a window shows
+     the progress), after which the ISO can be deleted.
+   - **Extracted files:** copy them into `game_root` (`default.xex` and the `media` folder at its top).
+3. Optional DLC: put the Black Label and Ver 1.01 packages in `dlc`. The game installs them at its next start.
+4. Start `futari.sh`. To play from Steam, add `futari.sh` as a non-Steam game and start it from Game Mode.
 
-The release build carries no shader of the game. It reads `vulkan_spirv.bin`, which the page makes from your copy,
-from its own folder. To build everything yourself instead, see below.
+Updating is the same download: extract it over the old folder. `game_root`, `dlc` and the saves (in
+`~/.local/share/futari`) stay. `futari.toml` is replaced, so copy it first if you changed settings.
+
+No game files are included. The game's shaders are translated for Vulkan and built into the program, as other
+recompilation projects do.
+
+The [installer page](https://cerroverb.github.io/futari-linux-installer/) still works, for the 1.1.0 build.
 
 ## Building
 

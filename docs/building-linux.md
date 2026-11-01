@@ -106,7 +106,7 @@ tools/linux/build.sh --release
 tools/linux/package.sh --release
 ```
 
-`package.sh --release` makes `out/futari-linux-<aarch64|x86_64>/` and its `.tar.gz`, with the program, `futari.sh`,
+`package.sh --release` makes `out/futari-linux-installer-<aarch64|x86_64>/` and its `.tar.gz`, with the program, `futari.sh`,
 the settings template and the licenses, and no game file or shader. That archive is the release asset the installer's
 deployment takes. `build.sh --release` uses the same build folder, so only the shader table and the link run again;
 `build.sh` without it builds the shaders in again.
@@ -116,6 +116,41 @@ To test a release build before publishing, put a `vulkan_spirv.bin` beside it. T
 built in writes its own in the same layout with `--renut_export_spirv_package=<file>`, for a comparison with the
 native chain's shaders. Both files are made from the game and are never distributed. Without the file, the log says
 `No ... vulkan_spirv.bin and no game shaders built in` and nothing of the game is drawn.
+
+## A complete release
+
+A build made without `--release` has the translated shaders built in. `package.sh --complete` packages it for
+players: `out/futari-linux-<aarch64|x86_64>/` and its `.tar.gz`, with the program, `futari.sh`, the settings
+template, the licenses, `tools/extract-xiso` and empty `game_root/` and `dlc/` folders, and no game file. At its first
+start the program extracts an ISO placed beside `futari.sh` into `game_root/`, or uses the game files copied there.
+
+```sh
+tools/linux/build.sh
+tools/linux/package.sh --complete
+```
+
+## The AArch64 build on an x86-64 machine
+
+After an x86-64 build (it runs the code generator and makes `out/linux-amd64/renut_gpu/shader_cache.cpp`), clang and
+lld cross-compile the AArch64 build against an Ubuntu 24.04 arm64 sysroot. `make_arm64_sysroot.py` downloads the
+packages from Ubuntu's port mirror, checks their SHA256 sums and unpacks them into `out/sysroot-arm64`; nothing is
+installed on the machine.
+
+```sh
+tools/linux/make_arm64_sysroot.py
+mkdir -p out/cross-gpu
+cp out/linux-amd64/renut_gpu/shader_cache.cpp out/cross-gpu/
+cmake --preset linux-arm64 -S app -DCMAKE_TOOLCHAIN_FILE=$PWD/tools/linux/aarch64-cross.cmake \
+    -DFUTARI_PREBUILT_GPU_DIR=$PWD/out/cross-gpu
+cmake --build out/linux-arm64
+tools/linux/package.sh --preset linux-arm64 --complete
+```
+
+The result needs glibc 2.38 or newer. To run it on the x86-64 machine for a test, `make_arm64_sysroot.py --out
+out/runroot-arm64 --extra mesa-vulkan-drivers libgl1` makes a root with Mesa's software Vulkan driver, and
+`qemu-aarch64 -L out/runroot-arm64` runs the program with
+`VK_ICD_FILENAMES=out/runroot-arm64/usr/share/vulkan/icd.d/lvp_icd.json` and, for the ISO extraction,
+`QEMU_LD_PREFIX=out/runroot-arm64`. It runs at about 2 frames a second that way.
 
 ## Settings
 
