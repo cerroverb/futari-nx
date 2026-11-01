@@ -28,6 +28,10 @@ upstream and its installer page.
 > You need your own copy of the Xbox 360 disc, either a disc image (`.iso`) or a folder you extracted it into. The Black
 > Label and Ver 1.01 DLC packages (`Content/<profile>/435A07D7/00000002`) are optional.
 
+> [!NOTE]
+> I am working on an English translation patch for the parts of the game that are still in Japanese: menu
+> descriptions, option help, and the replay, storage and leaderboard messages.
+
 ## FAQ
 
 ### Windows/macOS?
