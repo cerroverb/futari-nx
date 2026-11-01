@@ -33,8 +33,8 @@ REXCVAR_DEFINE_STRING(renut_shader_capture_dir, "shader_capture", "Nuts&Bolts/Gr
 // futari-linux: the game shaders' SPIR-V beside the executable (the web installer makes it from the player's own
 // executables), for a release build that carries no translated game shader (FUTARI_LINUX_RELEASE_SHADERS).
 REXCVAR_DEFINE_STRING(renut_spirv_package, "vulkan_spirv.bin", "Nuts&Bolts/Graphics",
-                      "The game shaders' SPIR-V package beside the executable (made by the web installer); a build "
-                      "with the shaders built in uses them when it is missing");
+                      "The game shaders' SPIR-V package beside the executable (made by the web installer), for a build "
+                      "without them built in (a build with them built in ignores it)");
 // futari-linux: writes the built-in SPIR-V as such a package and carries on, to test a release build against the
 // native chain's shaders. Empty: off.
 REXCVAR_DEFINE_STRING(renut_export_spirv_package, "", "Nuts&Bolts/Graphics",
@@ -108,6 +108,13 @@ SpirvPackage &OpenSpirvPackage() {
       ExportBuiltInSpirvPackage(
           banjo::renut_gpu::NextToExecutable(REXCVAR_GET(renut_export_spirv_package)).string());
     p.path = banjo::renut_gpu::NextToExecutable(REXCVAR_GET(renut_spirv_package)).string();
+    // futari-linux (2026-11-01): a build with the shaders built in uses only those. A 1.2.0 archive extracted over a
+    // 1.1.0 folder left the installer page's package beside it, and its shaders were drawn with this build's table.
+    if (g_spirvCacheCompressedSize != 0) {
+      if (std::filesystem::exists(p.path))
+        RGPU_INFO("{} ignored: this build has the game shaders built in (the file can be deleted)", p.path);
+      return;
+    }
     std::ifstream in(p.path, std::ios::binary | std::ios::ate);
     if (!in) {
       if (g_spirvCacheCompressedSize == 0)
