@@ -34,8 +34,7 @@ upstream and its installer page.
 
 Not supported by this fork: it is built and tested on Linux only (x86-64 and AArch64). The source still contains
 upstream futari-nx's Windows PC build ([docs/building.md](docs/building.md)), untouched and untested here.
-[springah/futari_recomp](https://github.com/springah/futari_recomp) builds Futari for Windows and macOS with the SDK's
-emulated GPU, and upstream [futari-nx](https://github.com/ChanseyIsTheBest/futari-nx) builds for the Nintendo Switch and
+[springah/futari_recomp](https://github.com/springah/futari_recomp) builds Futari for Windows and macOS with the SDK's emulated GPU, and upstream [futari-nx](https://github.com/ChanseyIsTheBest/futari-nx) builds for the Nintendo Switch and
 Windows.
 
 ### Is this a native port?
@@ -50,7 +49,7 @@ kernel and XAM calls are Xenia-derived reimplementations in C++.
 Mostly no. The vast majority of this project is code ported and retooled from other recompilation projects, such as
 futari-nx (the Switch port this is built on), reNut (the renderer and its Wayland window), UnleashedRecomp (frame
 pacing, window icon), springah's futari_recomp (exit from the title screen) and SDOJ-Recomp (a reference for the
-input-lag work), made to work for Futari on Linux. LLM assistance was used in the porting, but under strict supervision and guidelines and with all changes rigorously reviewed and tested. As an example of what I mean by "assisted", I developed/ported most of the Linux-side input latency code myself, then ran it through Claude to improve, debug, fed it back to me to review, tweak and test, and so on.
+input-lag work), made to work for Futari on Linux. LLM assistance was used in the porting, but under strict supervision and guidelines and with all changes rigorously reviewed and tested. As an example of what I mean by "assisted", I wrpte/ported most of the Linux-side input latency code myself, then ran it through Claude to improve, debug, fed it back to me to review, tweak and test, and so on.
 
 ### Does this port reduce input lag?
 
