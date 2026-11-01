@@ -168,7 +168,7 @@ if(FUTARI_CENSUS_DIR)
 endif()
 
 # futari-linux (2026-10-31): Linux sets itself up on the first start (src/futari_game_setup.cpp): an ISO beside
-# futari.sh is extracted into game_root/ with extract-xiso, staged in tools/extract-xiso beside the executable.
+# the executable is extracted into game_root/ with extract-xiso, staged in tools/extract-xiso beside the executable.
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux" AND NOT REXGLUE_PLATFORM_SWITCH)
     list(APPEND FUTARI_SOURCES src/futari_game_setup.cpp)
     set(FUTARI_FIRST_START_SETUP ON)

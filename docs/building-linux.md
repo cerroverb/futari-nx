@@ -120,9 +120,9 @@ native chain's shaders. Both files are made from the game and are never distribu
 ## A complete release
 
 A build made without `--release` has the translated shaders built in. `package.sh --complete` packages it for
-players: `out/futari-linux-<aarch64|x86_64>/` and its `.tar.gz`, with the program, `futari.sh`, the settings
+players: `out/futari-linux-<aarch64|x86_64>/` and its `.tar.gz`, with the program, the settings
 template, the licenses, `tools/extract-xiso` and empty `game_root/` and `dlc/` folders, and no game file. At its first
-start the program extracts an ISO placed beside `futari.sh` into `game_root/`, or uses the game files copied there.
+start the program extracts an ISO placed beside it into `game_root/`, or uses the game files copied there.
 
 ```sh
 tools/linux/build.sh

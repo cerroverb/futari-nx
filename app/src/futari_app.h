@@ -239,7 +239,7 @@ class FutariApp : public rex::ReXApp {
 #endif
 
   // The window exists here (UI thread, before the game starts): Renut's renderer comes up first. On Linux, a release
-  // without its game files sets itself up on the first start: an ISO beside futari.sh is extracted into game_root/
+  // without its game files sets itself up on the first start: an ISO beside the executable is extracted into game_root/
   // (futari_game_setup.h), or a game folder copied into game_root/ is found.
   std::optional<rex::PathConfig> OnFinalizePaths(const rex::PathConfig& defaults,
                                                  std::function<void(rex::PathConfig)> resume) override {

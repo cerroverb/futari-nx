@@ -212,11 +212,11 @@ std::string Install(IsoInstaller::State& state, const fs::path& exe_dir, const f
   CollectIsos(game_root, isos);
   if (isos.empty()) {
     return "The game files were not found.\n\n"
-           "Put your Mushihimesama Futari Ver 1.5 ISO next to futari.sh, or copy the "
+           "Put your Mushihimesama Futari Ver 1.5 ISO next to the game, or copy the "
            "extracted game files (default.xex and the media folder) into the game_root folder.";
   }
   if (isos.size() > 1) {
-    return "More than one .iso file was found. Leave only the Mushihimesama Futari ISO next to futari.sh.";
+    return "More than one .iso file was found. Leave only the Mushihimesama Futari ISO next to the game.";
   }
   const fs::path iso = isos.front();
 

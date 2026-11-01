@@ -88,11 +88,11 @@ input-lag work. Other CAVE games on the Xbox 360 could start from it too, alongs
    handhelds) from Releases and extract it wherever you keep games. Running `uname -m` in a terminal on the device
    prints `x86_64` or `aarch64`. Quiver installs it the same way.
 2. Add your game, one of two ways:
-   - **Disc image:** put the `.iso` next to `futari.sh`. The first start extracts it into `game_root` (a window shows
+   - **Disc image:** put the `.iso` next to the `futari` program. The first start extracts it into `game_root` (a window shows
      the progress), after which the ISO can be deleted.
    - **Extracted files:** copy them into `game_root` (`default.xex` and the `media` folder at its top).
 3. Optional DLC: put the Black Label and Ver 1.01 packages in `dlc`. The game installs them at its next start.
-4. Start `futari.sh`. To play from Steam, add `futari.sh` as a non-Steam game and start it from Game Mode.
+4. Start `futari`. To play from Steam, add `futari` as a non-Steam game and start it from Game Mode.
 
 Updating is the same download: extract it over the old folder. `game_root`, `dlc` and the saves (in
 `~/.local/share/futari`) stay. `futari.toml` is replaced, so copy it first if you changed settings.
@@ -137,8 +137,7 @@ game_root/      the files of your disc
 dlc/            optional Black Label and Ver 1.01, installed by the game at its first start
 ```
 
-Run `./futari` from that folder. To add it to Steam, point a non-Steam game at a small script that changes into the
-folder and runs `./futari`, then start it from Game Mode.
+Run `./futari` from that folder. To add it to Steam, add `futari` as a non-Steam game and start it from Game Mode.
 
 ## Input latency
 

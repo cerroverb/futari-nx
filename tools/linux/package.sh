@@ -3,7 +3,6 @@
 #
 #   out/futari-nx-<preset>/
 #     futari                 the executable (RPATH $ORIGIN: its libraries are found next to it)
-#     futari.sh              starts it from its own folder (for a desktop entry or a non-Steam game)
 #     *.so                   the SDK runtime, the GPU plugin and the eight game cores
 #     futari.toml            your settings (app/futari_linux.toml; an existing one is kept)
 #     game_root/             the files of your disc (assets/game_root)
@@ -12,12 +11,13 @@
 #   tools/linux/package.sh [--preset linux-arm64|linux-amd64] [--out DIR]
 #
 # --complete packages a build made with tools/linux/build.sh (translated shaders built in) for distribution: the
-# program, extract-xiso, its settings template, the launcher and the licenses, without any game file, as
+# program, extract-xiso, its settings template and the licenses, without any game file, as
 # out/futari-linux-<aarch64|x86_64>/ and out/futari-linux-<aarch64|x86_64>.tar.gz (the release asset). Players add
 # their ISO or game files; the first start sets them up (app/src/futari_game_setup.cpp).
 #
 # --release packages a build made with tools/linux/build.sh --release instead: the program, its
-# settings template, the launcher and the licenses, without the game files or any shader, as
+# settings template, the launcher futari.sh (the installer page's instructions start it) and the licenses, without the
+# game files or any shader, as
 # out/futari-linux-installer-<aarch64|x86_64>/ and its .tar.gz (what the web installer's deployment takes). Players get
 # the game files and vulkan_spirv.bin from the installer page.
 set -euo pipefail
@@ -64,7 +64,6 @@ copy_program() {
     mkdir -p "$1"
     cp -f "$build/futari" "$1/"
     find "$build" -maxdepth 1 -name '*.so' -exec cp -f {} "$1/" \;
-    write_launcher "$1"
 }
 
 if [ "$complete" -eq 1 ]; then
@@ -96,6 +95,7 @@ if [ "$release" -eq 1 ]; then
     out="${out:-$root/out/$name}"
     rm -rf "$out"
     copy_program "$out"
+    write_launcher "$out"
     cp "$root/app/futari_linux.toml" "$out/futari.toml"
     cp "$root/LICENSE" "$root/THIRD_PARTY_NOTICES.md" "$out/"
     # No game data in a release: every file of the folder is the program's.
