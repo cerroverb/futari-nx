@@ -11,7 +11,7 @@ AArch64 and x86-64, with the **Black Label** and **Ver 1.01** downloadable conte
 
 Chansey's project already handled the bulk of the work. The game's PowerPC code (`default.xex` and its eight game cores in
 `media/Module/*.xex`) is statically recompiled to C++ with [ReXGlue](https://github.com/rexglue/rexglue-sdk), and
-[reNut](https://github.com/masterspike52/reNut)'s Direct3D-level renderer draws the game's Direct3D calls directly.
+its Direct3D-level renderer draws the game's Direct3D calls directly.
 Because that port already runs on an ARM processor, its AArch64 code carries straight over to ARM Linux handhelds. On
 Linux the renderer runs on Vulkan through plume instead of deko3d. Nothing is emulated and the game runs without a
 container.
@@ -44,15 +44,15 @@ Windows.
 ### Is this a native port?
 
 Yes, for the game code and the graphics. The PowerPC code of `default.xex` and the eight game cores is recompiled ahead
-of time into C++ and runs directly on the processor, with no CPU emulation or JIT, and reNut's Direct3D-level renderer
-draws the game's Direct3D calls with Vulkan, with no Xbox 360 GPU emulation. The game mixes its own audio, and the Xbox
+of time into C++ and runs directly on the processor, with no CPU emulation or JIT, and a Direct3D-level renderer
+draws the game's Direct3D calls with Vulkan through hedge-dev's plume, with no Xbox 360 GPU emulation. The game mixes its own audio, and the Xbox
 kernel and XAM calls are Xenia-derived reimplementations in C++.
 
 ### Is this AI?
 
 Mostly no. The vast majority of this project is code ported and retooled from other recompilation projects, such as
-futari-nx (the Switch port this is built on), reNut (the renderer and its Wayland window), UnleashedRecomp (frame
-pacing, window icon), springah's futari_recomp (exit from the title screen) and SDOJ-Recomp (a reference for the
+futari-nx (the Switch port this is built on, renderer included), UnleashedRecomp with hedge-dev's plume and
+XenosRecomp (the Vulkan layer, the shader translation, frame pacing, window icon), springah's futari_recomp (exit from the title screen) and SDOJ-Recomp (a reference for the
 input-lag work), made to work for Futari on Linux. LLM assistance was used in the porting, but under strict supervision and guidelines and with all changes rigorously reviewed and tested. As an example of what I mean by "assisted", I wrpte/ported most of the Linux-side input latency code myself, then ran it through Claude to improve, debug, fed it back to me to review, tweak and test, and so on.
 
 There is also a strict no machine generated media rule, so you will never see slop generated "art" (generated slop is not art) or media in regards to any project I administer. 
@@ -200,8 +200,8 @@ each change was checked) see upstream's README and [docs/futari-notes.md](docs/f
   Everything outside the Linux changes is that work and the work it credits.
 - **[Tom Clay](https://github.com/rexglue/rexglue-sdk)** made the ReXGlue SDK, built on the work of the
   **[Xenia](https://xenia.jp)** team.
-- **reNut and [masterspike52](https://github.com/masterspike52/reNut)** made the Direct3D-level renderer, and
-  **[plume](https://github.com/renderbag/plume)** (from UnleashedRecomp) is the graphics layer it draws with.
+- **[plume](https://github.com/renderbag/plume)** (from UnleashedRecomp) is the graphics layer the renderer draws
+  with.
 - **[hedge-dev](https://github.com/hedge-dev/XenosRecomp)** made XenosRecomp, the Xenos shader translator.
 - **[SDOJ-Recomp](https://github.com/eandis/SDOJ-Recomp)** served as a reference for the Linux input-latency work.
 - The full upstream credits and the other libraries are in upstream's README and
