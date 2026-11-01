@@ -88,18 +88,21 @@ set(FUTARI_DXC "" CACHE FILEPATH "DXC for the host shaders (empty: XenosRecomp's
 # futari-linux (2026-10-30, Linux AArch64 on GitHub's ARM runners, which have no DXC; as espgaluda2-recomp's
 # ESPGALUDA2_PREBUILT_GPU_DIR): the shader outputs another host made are used as they are, and neither DXC nor
 # XenosRecomp runs: prebuilt/host_shaders/*.spirv.h (the renderer's own shaders, SPIR-V, the same on every CPU) and the
-# release build's shader table (renut_gpu/shader_cache_release.cpp, FUTARI_LINUX_RELEASE_SHADERS) in this folder.
-set(FUTARI_PREBUILT_GPU_DIR "" CACHE PATH "A folder with shader_cache_release.cpp from another build (no DXC)")
+# shader table in this folder: shader_cache_release.cpp (no game shaders) for a FUTARI_LINUX_RELEASE_SHADERS build,
+# shader_cache.cpp (the translated game shaders built in) for a complete one (2026-10-31).
+set(FUTARI_PREBUILT_GPU_DIR "" CACHE PATH "A folder with shader_cache[_release].cpp from another build (no DXC)")
 if(FUTARI_PREBUILT_GPU_DIR)
-    if(NOT FUTARI_LINUX_RELEASE_SHADERS)
-        message(FATAL_ERROR "FUTARI_PREBUILT_GPU_DIR is for release builds (FUTARI_LINUX_RELEASE_SHADERS=ON)")
-    endif()
     set(RENUT_DXC "")
     function(banjo_renut_shader_cache_override TARGET)
-        set(release_cpp "${RENUT_GPU_GEN_DIR}/shader_cache_release.cpp")
-        configure_file("${FUTARI_PREBUILT_GPU_DIR}/shader_cache_release.cpp" "${release_cpp}" COPYONLY)
-        target_sources(${TARGET} PRIVATE "${release_cpp}")
-        set_source_files_properties("${release_cpp}" PROPERTIES SKIP_PRECOMPILE_HEADERS ON)
+        if(FUTARI_LINUX_RELEASE_SHADERS)
+            set(name shader_cache_release.cpp)
+        else()
+            set(name shader_cache.cpp)
+        endif()
+        set(cache_cpp "${RENUT_GPU_GEN_DIR}/${name}")
+        configure_file("${FUTARI_PREBUILT_GPU_DIR}/${name}" "${cache_cpp}" COPYONLY)
+        target_sources(${TARGET} PRIVATE "${cache_cpp}")
+        set_source_files_properties("${cache_cpp}" PROPERTIES SKIP_PRECOMPILE_HEADERS ON)
     endfunction()
 elseif(FUTARI_DXC)
     set(RENUT_DXC "${FUTARI_DXC}")

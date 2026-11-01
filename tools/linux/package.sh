@@ -11,21 +11,28 @@
 #
 #   tools/linux/package.sh [--preset linux-arm64|linux-amd64] [--out DIR]
 #
-# --release packages a build made with tools/linux/build.sh --release for distribution instead: the program, its
+# --complete packages a build made with tools/linux/build.sh (translated shaders built in) for distribution: the
+# program, extract-xiso, its settings template, the launcher and the licenses, without any game file, as
+# out/futari-linux-<aarch64|x86_64>/ and out/futari-linux-<aarch64|x86_64>.tar.gz (the release asset). Players add
+# their ISO or game files; the first start sets them up (app/src/futari_game_setup.cpp).
+#
+# --release packages a build made with tools/linux/build.sh --release instead: the program, its
 # settings template, the launcher and the licenses, without the game files or any shader, as
-# out/futari-linux-<aarch64|x86_64>/ and out/futari-linux-<aarch64|x86_64>.tar.gz (the release asset the web
-# installer's deployment takes). Players get the game files and vulkan_spirv.bin from the installer page.
+# out/futari-linux-installer-<aarch64|x86_64>/ and its .tar.gz (what the web installer's deployment takes). Players get
+# the game files and vulkan_spirv.bin from the installer page.
 set -euo pipefail
 
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 preset=""
 out=""
 release=0
+complete=0
 while [ $# -gt 0 ]; do
     case "$1" in
         --preset) preset="$2"; shift ;;
         --out) out="$2"; shift ;;
         --release) release=1 ;;
+        --complete) complete=1 ;;
         *) echo "unknown argument: $1" >&2; exit 2 ;;
     esac
     shift
@@ -60,12 +67,32 @@ copy_program() {
     write_launcher "$1"
 }
 
+if [ "$complete" -eq 1 ]; then
+    if grep -q '^FUTARI_LINUX_RELEASE_SHADERS:BOOL=ON$' "$build/CMakeCache.txt"; then
+        echo "$build is a --release build (no shaders): run tools/linux/build.sh without --release" >&2
+        exit 1
+    fi
+    name="futari-linux-$arch"
+    out="${out:-$root/out/$name}"
+    rm -rf "$out"
+    copy_program "$out"
+    mkdir -p "$out/tools/extract-xiso" "$out/game_root" "$out/dlc"
+    cp "$build/tools/extract-xiso/extract-xiso" "$build/tools/extract-xiso/LICENSE.TXT" "$out/tools/extract-xiso/"
+    cp "$root/app/futari_linux.toml" "$out/futari.toml"
+    cp "$root/LICENSE" "$root/THIRD_PARTY_NOTICES.md" "$out/"
+    # No game data: every file of the folder is the program's (game_root/ and dlc/ are empty).
+    if [ -n "$(find "$out/game_root" "$out/dlc" -type f)" ]; then echo "game files in the release" >&2; exit 1; fi
+    tar -C "$(dirname "$out")" -czf "$out.tar.gz" "$name"
+    echo "done: $out.tar.gz"
+    exit 0
+fi
+
 if [ "$release" -eq 1 ]; then
     if ! grep -q '^FUTARI_LINUX_RELEASE_SHADERS:BOOL=ON$' "$build/CMakeCache.txt"; then
         echo "$build was not configured with FUTARI_LINUX_RELEASE_SHADERS: run tools/linux/build.sh --release" >&2
         exit 1
     fi
-    name="futari-linux-$arch"
+    name="futari-linux-installer-$arch"
     out="${out:-$root/out/$name}"
     rm -rf "$out"
     copy_program "$out"

@@ -167,6 +167,13 @@ if(FUTARI_CENSUS_DIR)
     list(APPEND FUTARI_SOURCES "${FUTARI_CENSUS_DIR}/census_default.cpp")
 endif()
 
+# futari-linux (2026-10-31): Linux sets itself up on the first start (src/futari_game_setup.cpp): an ISO beside
+# futari.sh is extracted into game_root/ with extract-xiso, staged in tools/extract-xiso beside the executable.
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux" AND NOT REXGLUE_PLATFORM_SWITCH)
+    list(APPEND FUTARI_SOURCES src/futari_game_setup.cpp)
+    set(FUTARI_FIRST_START_SETUP ON)
+endif()
+
 if(WIN32)
     add_executable(futari WIN32 ${FUTARI_SOURCES})
 else()
@@ -175,6 +182,27 @@ endif()
 
 # Link the SDK. Stage 1 draws with ReXGlue's Xenos GPU emulation; the native renderer replaces it later.
 rexglue_setup_target(futari GPU_PLUGINS xenos)
+
+if(FUTARI_FIRST_START_SETUP)
+    target_compile_definitions(futari PRIVATE FUTARI_FIRST_START_SETUP=1)
+    # extract-xiso (as espgaluda2-recomp stages it), at a pinned commit, beside the executable with its license.
+    enable_language(C)
+    include(FetchContent)
+    FetchContent_Declare(extract_xiso
+        GIT_REPOSITORY https://github.com/XboxDev/extract-xiso.git
+        GIT_TAG 3f5b62cfe68f000b0e3c8a30104973f3a297948e
+        GIT_PROGRESS TRUE)
+    FetchContent_MakeAvailable(extract_xiso)
+    set(_extract_xiso_dir "$<TARGET_FILE_DIR:futari>/tools/extract-xiso")
+    add_custom_target(stage_extract_xiso ALL
+        COMMAND ${CMAKE_COMMAND} -E make_directory "${_extract_xiso_dir}"
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "$<TARGET_FILE:extract-xiso>" "${_extract_xiso_dir}/$<TARGET_FILE_NAME:extract-xiso>"
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "${extract_xiso_SOURCE_DIR}/LICENSE.TXT" "${_extract_xiso_dir}/LICENSE.TXT"
+        VERBATIM)
+    add_dependencies(stage_extract_xiso extract-xiso futari)
+endif()
 
 # banjo-nx's fix (2026-10-17), futari-nx 2026-10-20: Ryujinx starts NROs without argv[0]; the SDK then takes the NRO's
 # usual place on the SD (sdk/src/core/filesystem_posix.cpp). A console's hbloader always passes the path.

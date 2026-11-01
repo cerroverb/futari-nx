@@ -53,7 +53,7 @@ missing=0
 for tool in cmake ninja clang clang++ python3 git glslangValidator pkg-config; do
     if ! command -v "$tool" > /dev/null; then echo "missing: $tool" >&2; missing=1; fi
 done
-# FUTARI_PREBUILT_GPU_DIR (environment): a release build with the shaders of another build, without DXC (gpu.cmake).
+# FUTARI_PREBUILT_GPU_DIR (environment): a build with the shader table of another build, without DXC (gpu.cmake).
 if [ -z "${FUTARI_PREBUILT_GPU_DIR:-}" ] && ! command -v dxc > /dev/null &&
    [ ! -x app/thirdparty/reblue-XenosRecomp/thirdparty/dxc-bin/bin/x64/dxc-linux ]; then
     echo "missing: dxc (DirectXShaderCompiler; docs/building-linux.md)" >&2

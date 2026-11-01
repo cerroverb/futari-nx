@@ -1,10 +1,12 @@
 name: Build Linux AArch64
 
-# futari-linux's AArch64 release archive (tools/linux/build.sh --release, tools/linux/package.sh --release) on GitHub's
-# ARM runner (Ubuntu 24.04). The game files the code generator needs (default.xex and the eight cores) and the release
-# build's shader table come from the private repository cerroverb/futari-linux-private-assets through a read-only deploy
-# key (secret PRIVATE_ASSETS_KEY); nothing of them is copied into this repository, the log or the archive. The runner
-# has no DXC, so the renderer's own shaders come prebuilt (prebuilt/host_shaders, FUTARI_PREBUILT_GPU_DIR).
+# futari-linux's AArch64 release archive (tools/linux/build.sh, tools/linux/package.sh --complete) on GitHub's ARM
+# runner (Ubuntu 24.04), then a test run of the archive. The game files the code generator needs (default.xex and the
+# eight cores) and the shader table (the translated shaders) come from the private repository
+# cerroverb/futari-linux-private-assets through a read-only deploy key (secret PRIVATE_ASSETS_KEY); nothing of them is
+# copied into this repository, the log or the archive. The runner has no DXC, so the renderer's own shaders come
+# prebuilt (prebuilt/host_shaders, FUTARI_PREBUILT_GPU_DIR). The test run draws with Mesa's software Vulkan driver
+# (lavapipe) on a virtual X display: it checks that the archive sets itself up and draws the game, not its speed.
 
 on:
   workflow_dispatch:
@@ -54,17 +56,32 @@ jobs:
       - name: Build
         env:
           FUTARI_PREBUILT_GPU_DIR: ${{ runner.temp }}/assets/futari/gpu
-        run: tools/linux/build.sh --game-dir "$RUNNER_TEMP/assets/futari" --preset linux-arm64 --release --jobs 3
+        run: tools/linux/build.sh --game-dir "$RUNNER_TEMP/assets/futari" --preset linux-arm64 --jobs 3
 
       - name: Package
         run: |
-          tools/linux/package.sh --preset linux-arm64 --release
+          tools/linux/package.sh --preset linux-arm64 --complete
           f=out/futari-linux-aarch64.tar.gz
           ls -la $f
           tar -tzf $f
           mkdir -p /tmp/check && tar -xzf $f -C /tmp/check
           ! strings /tmp/check/*/* 2>/dev/null | grep -q -E "/home/runner|default\.xex$"
           file /tmp/check/*/futari
+
+      - name: Test run (software Vulkan, virtual display)
+        run: |
+          sudo apt-get install -y mesa-vulkan-drivers xvfb imagemagick
+          t="$RUNNER_TEMP/run" && rm -rf "$t" && mkdir -p "$t"
+          tar -xzf out/futari-linux-aarch64.tar.gz -C "$t"
+          d="$t/futari-linux-aarch64"
+          # As a player would: the game files copied into game_root/ (the first start finds them there).
+          cp -a "$RUNNER_TEMP/assets/futari/." "$d/game_root/"
+          rm -rf "$d/game_root/gpu"
+          export VK_ICD_FILENAMES=$(ls /usr/share/vulkan/icd.d/lvp_icd*.json | head -n 1)
+          Xvfb :9 -screen 0 1280x720x24 & sleep 2
+          (cd "$d" && DISPLAY=:9 SDL_VIDEODRIVER=x11 timeout 300 ./futari.sh > "$t/stdout.log" 2>&1) || true
+          python3 tools/linux/ci_run_check.py "$d/last-run.log" || { tail -n 40 "$d/last-run.log"; exit 1; }
+          rm -rf "$t"
 
       - name: Upload
         uses: actions/upload-artifact@v4

@@ -22,6 +22,10 @@
 #include "futari_enhancements.h"
 #include "futari_input_script.h"
 #include "futari_title_exit.h"
+#if FUTARI_FIRST_START_SETUP
+#include "futari_game_setup.h"
+#include <rex/system.h>
+#endif
 #include "futari_memory_log.h"
 #include "futari_pgo.h"
 #include "futari_pc_profiler.h"
@@ -232,15 +236,45 @@ class FutariApp : public rex::ReXApp {
     rex::ReXApp::OnWindowPixelSizeChanged(pixel_width, pixel_height);
     if (banjo::renut_gpu::Active()) renut::gpu::OnWindowResized();
   }
-  // The window exists here (UI thread, before the game starts): Renut's renderer comes up first.
+#endif
+
+  // The window exists here (UI thread, before the game starts): Renut's renderer comes up first. On Linux, a release
+  // without its game files sets itself up on the first start: an ISO beside futari.sh is extracted into game_root/
+  // (futari_game_setup.h), or a game folder copied into game_root/ is found.
   std::optional<rex::PathConfig> OnFinalizePaths(const rex::PathConfig& defaults,
                                                  std::function<void(rex::PathConfig)> resume) override {
+#if FUTARI_RENUT_RENDERER
     if (banjo::renut_gpu::Active()) {
       renut::gpu::StartRenderer(app_context(), [this] { return imgui_drawer(); });
     }
-    return rex::ReXApp::OnFinalizePaths(defaults, std::move(resume));
-  }
 #endif
+#if FUTARI_FIRST_START_SETUP
+    const auto exe = rex::filesystem::GetExecutableFolder();
+    const auto game_root = defaults.game_data_root.empty() ? exe / "game_root" : defaults.game_data_root;
+    if (auto folder = futari::game_setup::FindGameFolder(game_root)) {
+      auto paths = defaults;
+      paths.game_data_root = *folder;
+      return paths;
+    }
+    installer_.Start(app_context(), imgui_drawer(), exe, game_root,
+                     [this, defaults, game_root, resume = std::move(resume)](bool ok, const std::string& error) {
+                       if (ok) {
+                         if (auto folder = futari::game_setup::FindGameFolder(game_root)) {
+                           auto paths = defaults;
+                           paths.game_data_root = *folder;
+                           resume(paths);
+                           return;
+                         }
+                       }
+                       rex::ShowSimpleMessageBox(rex::SimpleMessageBoxType::Error,
+                                                 ok ? "The extracted game files were not found." : error);
+                       app_context().QuitFromUIThread();
+                     });
+    return std::nullopt;
+#else
+    return rex::ReXApp::OnFinalizePaths(defaults, std::move(resume));
+#endif
+  }
 
   // Analysis aid: with FUTARI_DUMP_IMAGE=<file>, write the loaded guest image (image_base..image_base+image_size) so
   // code pointers stored in data can be scanned for (tools/pointer_scan.py). Does nothing unless the variable is set.
@@ -260,4 +294,8 @@ class FutariApp : public rex::ReXApp {
       REXLOG_INFO("guest image written to {}", path);
     }
   }
+
+#if FUTARI_FIRST_START_SETUP
+  futari::game_setup::IsoInstaller installer_;
+#endif
 };
